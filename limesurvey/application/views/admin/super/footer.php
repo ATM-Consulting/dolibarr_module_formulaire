@@ -1,32 +1,74 @@
-    <div class="push"></div>
-</div>
-<div class='footer'>
-    <div style='float:left;width:110px;text-align:left;'>
-    <a href='http://docs.limesurvey.org'><img alt='LimeSurvey - <?php $clang->eT("Online Manual");?>' title='LimeSurvey - <?php $clang->eT("Online manual");?>' src='<?php echo Yii::app()->getConfig('adminimageurl');?>docs.png' /></a>
-    </div>
-    <div style='float:right;'>
-    <a href='http://donate.limesurvey.org'><img alt='<?php $clang->eT("Support this project - Donate to "); ?>LimeSurvey' title='<?php $clang->eT("Support this project - Donate to "); ?>LimeSurvey!' src='<?php echo Yii::app()->getConfig('adminimageurl');;?>donate.png'/></a>
-    </div>
-    <div class='subtitle'><a class='subtitle' title='<?php $clang->eT("Visit our website!"); ?>' href='http://www.limesurvey.org' target='_blank'>LimeSurvey</a><br /><?php echo $versiontitle." ".$versionnumber." ".$buildtext;?></div>
-</div>
 <?php
-    if(!empty($js_admin_includes))
-    {
-        foreach ($js_admin_includes as $jsinclude)
-        {
-            ?>
-            <script type="text/javascript" src="<?php echo $jsinclude;?>"></script>
-            <?php
-        }
-    }
-    if(!empty($css_admin_includes)) {
-        foreach ($css_admin_includes as $cssinclude)
-        {
-            ?>
-            <link rel="stylesheet" type="text/css" media="all" href="<?php echo $cssinclude;?>" />
-            <?php
-        }
-    }
+/**
+ * Footer view
+ * Inserted in all pages
+ */
 ?>
+
+<!-- Footer -->
+<footer class='footer'>
+	<div class="container-fluid">
+		<div class="row">
+		    <!-- Link to manual -->
+		    <div class="col-xs-6 col-md-4 col-lg-1 ">
+		    	<a href='http://manual.limesurvey.org' onclick='function go(ev) { ev.preventDefault(); var win = window.open("http://manual.limesurvey.org", "_blank"); win.focus(); }; go(event);'>
+                    <span class="glyphicon glyphicon-info-sign" id="info-footer"></span>
+                </a>
+		    </div>
+
+		    <!-- Support / Donate -->
+		    <div  class="col-xs-6 col-md-4  col-lg-5 text-right"  >
+		    	<a href='http://donate.limesurvey.org'>
+                    <img alt='<?php eT("Support this project - Donate to "); ?>LimeSurvey' title='<?php eT("Support this project - Donate to "); ?>LimeSurvey!' src='<?php echo Yii::app()->getConfig('adminimageurl');?>donate.png'/>
+                </a>
+		    </div>
+
+		    <!-- Lime survey website -->
+		    <div class="col-xs-6 col-md-4 col-lg-6 text-right">
+		    	<a  title='<?php eT("Visit our website!"); ?>' href='http://www.limesurvey.org' target='_blank'>LimeSurvey</a><br /><?php echo $versiontitle."  ".$versionnumber." ".$buildtext;?>
+		    </div>
+		</div>
+	</div>
+</footer>
+
+<!-- Modal for confirmation -->
+<div id="confirmation-modal" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                <h4 class="modal-title"><?php eT("Confirm"); ?></h4>
+            </div>
+            <div class="modal-body">
+                <p class='modal-body-text'><?php eT("Are you sure?"); ?></p>
+            </div>
+            <div class="modal-footer">
+                <a type="button" class="btn btn-primary btn-ok"><span class='fa fa-check'></span>&nbsp;<?php eT("Yes"); ?></a>
+                <button type="button" class="btn btn-danger" data-dismiss="modal"><span class='fa fa-ban'></span>&nbsp;<?php eT("No"); ?></button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for errors -->
+<div id="error-modal" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content panel-danger">
+            <div class="modal-header panel-heading">
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                <h4 class="modal-title"><?php eT("Error"); ?></h4>
+            </div>
+            <div class="modal-body">
+                <p class='modal-body-text'><?php eT("An error occurred."); ?></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal"></span>&nbsp;<?php eT("Close"); ?></button>
+            </div>
+        </div>
+    </div>
+</div>
+
 </body>
 </html>

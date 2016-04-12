@@ -1,18 +1,26 @@
 <tr class='<?php echo $bgcc; ?>' valign='top'>
     <td align='center'><input type='checkbox' class='cbResponseMarker' value='<?php echo $dtrow['id']; ?>' name='markedresponses[]' /></td>
     <td align='center'>
-<a href='<?php echo $this->createUrl("admin/responses/sa/view/surveyid/$surveyid/id/{$dtrow['id']}"); ?>'><img src='<?php echo $sImageURL; ?>token_viewanswer.png' alt='<?php $clang->eT('View response details'); ?>'/></a>
-<?php if (hasSurveyPermission($surveyid, 'responses', 'update'))
+<a href='<?php echo $this->createUrl("admin/responses/sa/view/surveyid/$surveyid/id/{$dtrow['id']}"); ?>'>
+    <span class="glyphicon glyphicon-list-alt text-success" title="<?php eT('View response details'); ?>"></span>
+</a>
+<?php if (Permission::model()->hasSurveyPermission($surveyid, 'responses', 'update'))
 { ?>
-<a href='<?php echo $this->createUrl("admin/dataentry/sa/editdata/subaction/edit/surveyid/{$surveyid}/id/{$dtrow['id']}"); ?>'><img src='<?php echo $sImageURL; ?>edit_16.png' alt='<?php $clang->eT('Edit this response'); ?>'/></a>
+<a href='<?php echo $this->createUrl("admin/dataentry/sa/editdata/subaction/edit/surveyid/{$surveyid}/id/{$dtrow['id']}"); ?>'>
+    <span class="glyphicon glyphicon-pencil text-success" title="<?php eT('Edit this response'); ?>"></span>
+</a>
 <?php }
-if (hasFileUploadQuestion($surveyid))
-{ ?>
-<a><img id='downloadfile_<?php echo $dtrow['id']; ?>' src='<?php echo $sImageURL; ?>down.png' alt='<?php $clang->eT('Download all files in this response as a zip file'); ?>' class='downloadfile'/></a>
+if ($bHasFileUploadQuestion) { ?>
+<a>
+    <span id='downloadfile_<?php echo $dtrow['id']; ?>' class="downloadfile glyphicon glyphicon-download-alt text-success" title="<?php eT('Download all files in this response as a zip file'); ?>">
+    </span>
+</a>
 <?php }
-if (hasSurveyPermission($surveyid, 'responses', 'delete'))
+if (Permission::model()->hasSurveyPermission($surveyid, 'responses', 'delete'))
 { ?>
-<a><img id='deleteresponse_<?php echo $dtrow['id']; ?>' src='<?php echo $sImageURL; ?>token_delete.png' alt='<?php $clang->eT('Delete this response'); ?>' class='deleteresponse'/></a>
+<a>
+    <span id='deleteresponse_<?php echo $dtrow['id']; ?>' class="deleteresponse glyphicon glyphicon-trash text-warning" title="<?php eT('Delete this response'); ?>"></span>
+</a>
 <?php } ?>
 </td>
     <?php
@@ -23,7 +31,7 @@ if (hasSurveyPermission($surveyid, 'responses', 'delete'))
             if (isset($dtrow['tid']) && !empty($dtrow['tid']))
             {
                 //If we have a token, create a link to edit it
-                $browsedatafield .= "<a href='" . $this->createUrl("admin/tokens/sa/edit/surveyid/$surveyid/tokenid/{$dtrow['tid']}/") . "' title='" . $clang->gT("Edit this token") . "'>";
+                $browsedatafield .= "<a href='" . $this->createUrl("admin/tokens/sa/edit/surveyid/$surveyid/tokenid/{$dtrow['tid']}/") . "' title='" . gT("Edit this token") . "'>";
                 $browsedatafield .= "{$dtrow['token']}";
                 $browsedatafield .= "</a>";
             }
@@ -40,7 +48,7 @@ if (hasSurveyPermission($surveyid, 'responses', 'delete'))
 
         for ($i; $i < $fncount; $i++)
         {
-            if (isset($fnames[$i]['type']) && $fnames[$i]['type'] == "|")
+            if (isset($fnames[$i]['type']) && $fnames[$i]['type'] == "|" && $dtrow[$fnames[$i][0]]!='')
             {
                 $index = $fnames[$i]['index'];
                 $metadata = $fnames[$i]['metadata'];
@@ -54,7 +62,7 @@ if (hasSurveyPermission($surveyid, 'responses', 'delete'))
                     <?php }
                     else if ($metadata === "name")
                         { ?>
-                        <td><a href='#' onclick=" <?php echo convertGETtoPOST('?action=browse&amp;subaction=all&amp;downloadindividualfile=' . $phparray[$index][$metadata] . '&amp;fieldname=' . $fnames[$i][0] . '&amp;id=' . $dtrow['id'] . '&amp;sid=' . $surveyid); ?>" ><?php echo rawurldecode($phparray[$index][$metadata]); ?></a></td>
+                        <td><?php echo CHtml::link(htmlspecialchars(rawurldecode($phparray[$index][$metadata])), App()->getController()->createUrl("/admin/responses/sa/browse/fieldname/{$fnames[$i][0]}/id/{$dtrow['id']}/surveyid/{$surveyid}",array('downloadindividualfile'=>$phparray[$index][$metadata]))) ?></td>
                         <?php }
                         else
                         { ?>
@@ -80,6 +88,7 @@ if (hasSurveyPermission($surveyid, 'responses', 'delete'))
                 }
                 else
                 {
+                    // Never use purify : too long (X40)
                     $browsedatafield = htmlspecialchars(strip_tags(stripJavaScript(getExtendedAnswer($surveyid, $fnames[$i][0], $dtrow[$fnames[$i][0]], $oBrowseLanguage))), ENT_QUOTES);
                 }
                 echo "<td><span>$browsedatafield</span></td>\n";

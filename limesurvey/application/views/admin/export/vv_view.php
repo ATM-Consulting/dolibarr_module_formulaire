@@ -1,26 +1,39 @@
-<?php echo CHtml::form(array("admin/export/sa/vvexport/surveyid/{$surveyid}/subaction/export"), 'post', array('id'=>'vvexport'));?>
+<div class="side-body">
+    <h3><?php eT("Export a VV survey file");?></h3>
+        <div class="row">
+            <div class="col-lg-12 content-right">
 
-    <div class='header ui-widget-header'><?php $clang->eT("Export a VV survey file");?></div>
-    <ul>
+
+<?php echo CHtml::form(array("admin/export/sa/vvexport/surveyid/{$surveyid}"), 'post', array('id'=>'vvexport'));?>
+
+    <ul class="list-unstyled">
         <li>
-            <label for='sid'><?php $clang->eT("Export survey");?>:</label>
-            <input type='text' size='10' value='<?php echo $surveyid;?>' id='sid' name='sid' readonly='readonly' />
+            <label for='surveyid'><?php eT("Export survey");?>:</label>
+            <?php echo CHtml::textField('surveyid', $surveyid,array('size'=>10, 'readonly'=>'readonly')); ?>
         </li>
         <li>
-            <label for='completionstate'><?php $clang->eT("Export");?>:</label>
-            <select name='completionstate' id='completionstate'>
-                <option value='complete' <?php echo $selecthide;?>><?php $clang->eT("Completed responses only");?></option>
-                <option value='all' <?php echo $selectshow;?>><?php $clang->eT("All responses");?></option>
-                <option value='incomplete' <?php echo $selectinc;?>><?php $clang->eT("Incomplete responses only");?></option>
-            </select>
+            <label for='completionstate'><?php eT("Export");?>:</label>
+            <?php  echo CHtml::dropDownList('completionstate', $selectincansstate, array(
+                    'complete' => gT("Completed responses only",'unescaped'),
+                    'all' => gT("All responses",'unescaped'),
+                    'incomplete' => gT("Incomplete responses only",'unescaped'),
+                    ), array('class'=>'form-control')); ?>
         </li>
         <li>
-            <label for='extension'><?php $clang->eT("File extension");?>: </label>
-            <input type='text' id='extension' name='extension' size='3' value='csv' /><span style='font-size: 7pt'>*</span>
+            <label for='extension' title='<?php eT("For easy opening in MS Excel, change the extension to 'tab' or 'txt'");?>'><?php eT("File extension");?>: </label>
+            <?php echo CHtml::textField('extension', 'csv',array('size'=>3)); ?>
         </li>
+        <li>
+            <label for='vvversion' title='<?php eT("If you want to import survey on old installation or if your survey have problem: use old version (automatically selected if some code are duplicated).");?>'><?php eT("VV export version");?>: </label>
+            <?php  echo CHtml::dropDownList('vvversion', $vvversionseleted, array(
+                '2' => gT("Last VV version",'unescaped'),
+                '1' => gT("Old VV version",'unescaped'),
+                ), array('class'=>'form-control'));; ?>
+        <li>
     </ul>
-    <p><input type='submit' value='<?php $clang->eT("Export results");?>' />&nbsp;
-    <input type='hidden' name='subaction' value='export' />
-</form>
-
-<p><span style='font-size: 7pt'>* <?php $clang->eT("For easy opening in MS Excel, change the extension to 'tab' or 'txt'");?></span><br />
+    <p>
+        <?php echo CHtml::submitButton(gT('Export results','unescaped'), array('class'=>'btn btn-default hidden')); ?>
+        <?php echo CHtml::hiddenField('subaction','export'); ?>
+    </p>
+<form>
+</div></div></div>

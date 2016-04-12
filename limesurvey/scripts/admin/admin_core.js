@@ -1,6 +1,42 @@
-//$Id: admin_core.js 10154 2011-05-31 11:45:24Z c_schmitz $
+/*
+ * JavaScript functions for LimeSurvey administrator
+ *
+ * This file is part of LimeSurvey
+ * Copyright (C) 2007-2013 The LimeSurvey Project Team / Carsten Schmitz
+ * All rights reserved.
+ * License: GNU/GPL License v2 or later, see LICENSE.php
+ * LimeSurvey is free software. This version may have been modified pursuant
+ * to the GNU General Public License, and as distributed it includes or
+ * is derivative of works licensed under the GNU General Public License or
+ * other free or open source software licenses.
+ * See COPYRIGHT.php for copyright notices and details.
+ */
+
+// @license magnet:?xt=urn:btih:cf05388f2679ee054f2beb29a391d25f4e673ac3&dn=gpl-2.0.txt  GNU/GPL License v2 or later
+
+/* Set a variable to test if browser have HTML5 form ability
+ * Need to be replaced by some polyfills see #8009
+ */
+hasFormValidation= typeof document.createElement( 'input' ).checkValidity == 'function';
 
 $(document).ready(function(){
+
+    initializeAjaxProgress();
+    tableCellAdapters();
+    linksInDialog();
+
+    if($('.htmleditor').length>0)
+    {
+        setTimeout(function(){
+            $('.cke_contents').width('580px');
+            $iframes = $('.htmleditor').find('iframe');
+            //console.log('OK '+JSON.stringify($iframes));
+            $iframes.each(function(){
+                $(this).width('500px').zIndex('10000');
+            });
+        },500);
+    }
+
     if(typeof(userdateformat) !== 'undefined')
         {
         $(".popupdate").each(function(i,e) {
@@ -11,50 +47,19 @@ $(document).ready(function(){
                 changeYear: true,
                 changeMonth: true,
                 duration: 'fast'
-            }, $.datepicker.regional[userlanguage]);
+            }, $.datepicker.regional[LS.data.language]);
         });
         $(".popupdatetime").datepicker({ dateFormat: userdateformat+' 00:00',
             showOn: 'button',
             changeYear: true,
             changeMonth: true,
             duration: 'fast'
-        }, $.datepicker.regional[userlanguage]);
+        }, $.datepicker.regional[LS.data.language]);
     }
+    doToolTip();
 
-    $('button,input[type=submit],input[type=button],input[type=reset]').addClass("limebutton ui-state-default ui-corner-all");
-    $('button,input[type=submit],input[type=button],input[type=reset]').hover(
-    function(){
-        $(this).addClass("ui-state-hover");
-    },
-    function(){
-        $(this).removeClass("ui-state-hover");
-    }
-    )
-
-
-    // Loads the tooltips for the toolbars  except the surveybar
-    $('img[alt],input[src]').not('.surveybar img').each(function() {
-        if($(this).attr('alt') != '')
-            {
-            $(this).qtip({
-                style: {name: 'light',
-                    tip:true,
-                    border: {
-                        width: 1,
-                        radius: 5
-                    }
-                },
-                position: {adjust: {
-                        screen: true, scroll:true},
-                    corner: {
-                        target: 'bottomRight'}
-                },
-                show: {effect: {length:50}},
-                hide: {when: 'mouseout'}
-
-            });
-        }
-    });
+    $('button,input[type=submit],input[type=button],input[type=reset],.button').button();
+    $('button,input[type=submit],input[type=button],input[type=reset],.button').addClass("limebutton");
 
     $(".progressbar").each(function(){
         var pValue = parseInt($(this).attr('name'));
@@ -71,112 +76,52 @@ $(document).ready(function(){
     });
 
 
+    /* Switch format group */
+    if ($('#switchchangeformat').length>0){
+        $('#switchchangeformat button').on('click', function(event, state) {
+            $('#switchchangeformat button.active').removeClass('active');
+            $(this).addClass('active');
+            $value = $(this).data('value');
+            $url = $('#switch-url').attr('data-url')+'/format/'+$value;
 
-    $('label[title]').each(function() {
-        if($(this).attr('title') != '')
-            {
-            $(this).qtip({
-                style: {name: 'cream',
-                    tip:true,
-                    color:'#1D2D45',
-                    border: {
-                        width: 1,
-                        radius: 5,
-                        color: '#EADF95'}
+            console.log('required format: '+$value);
+            console.log('format url: '+$url);
+
+            $.ajax({
+                url : $url,
+                type : 'GET',
+                dataType : 'html',
+
+                // html contains the buttons
+                success : function(html, statut){
                 },
-                position: {adjust: {
-                        screen: true, scroll:true},
-                    corner: {
-                        target: 'bottomRight'}
-                },
-                show: {effect: {length:50}}
+                error :  function(html, statut){
+                    alert('error');
+                }
             });
-        }
+
+        });
+    };
+
+
+    $('#survey-action-chevron').click(function(){
+        $url = $(this).data('url');
+        $.ajax({
+            url : $url,
+            type : 'GET',
+            dataType : 'html',
+
+            // html contains the buttons
+            success : function(html, statut){
+                $('#survey-action-container').toggle();
+                $('#survey-action-chevron').toggleClass('glyphicon-chevron-up').toggleClass('glyphicon-chevron-down');
+            },
+            error :  function(html, statut){
+                alert('error');
+            }
+        });
     });
 
-    $('.dosurvey').qtip({
-        content:{
-            text:$('#dosurveylangpopup')
-        },
-        style: {name: 'cream',
-            tip:true,
-            color:'#1D2D45',
-            border: {
-                width: 1,
-                radius: 5,
-                color: '#EADF95'}
-        },
-        position: {adjust: {
-                screen: true, scroll:true},
-            corner: {
-                target: 'bottomMiddle',
-                tooltip: 'topMiddle'}
-        },
-        show: {effect: {length:50},
-            when: {
-                event:'click'
-        }},
-        hide: {fixed:true,
-            when: {
-                event:'unfocus'
-        }}
-    });
-
-    $('#previewquestion').qtip({
-        content:{
-            text:$('#previewquestionpopup')
-        },
-        style: {name: 'cream',
-            tip:true,
-            color:'#111111',
-            border: {
-                width: 1,
-                radius: 5,
-                color: '#EADF95'}
-        },
-        position: {adjust: {
-                screen: true, scroll:true},
-            corner: {
-                target: 'bottomMiddle',
-                tooltip: 'topMiddle'}
-        },
-        show: {effect: {length:50},
-            when: {
-                event:'click'
-        }},
-        hide: {fixed:true,
-            when: {
-                event:'unfocus'
-        }}
-    });
-
-    $('.tipme').each(function() {
-        if($(this).attr('alt') != '')
-            {
-            $(this).qtip({
-                style: {name: 'cream',
-                    tip:true,
-                    color:'#111111',
-                    border: {
-                        width: 1,
-                        radius: 5,
-                        color: '#EADF95'}
-                },
-                position: {adjust: {
-                        screen: true, scroll:true},
-                    corner: {
-                        target: 'topRight',
-                        tooltip: 'bottomLeft'
-                    }
-                },
-                show: {effect: {length:100}}
-
-            });
-        }
-    });
-
-
-    if ($('#showadvancedattributes').length>0) updatequestionattributes();
 
     $('#showadvancedattributes').click(function(){
         $('#showadvancedattributes').hide();
@@ -185,7 +130,8 @@ $(document).ready(function(){
             "height": "toggle", "opacity": "toggle"
         });
 
-    })
+    });
+
     $('#hideadvancedattributes').click(function(){
         $('#showadvancedattributes').show();
         $('#hideadvancedattributes').hide();
@@ -193,8 +139,15 @@ $(document).ready(function(){
             "height": "toggle", "opacity": "toggle"
         });
 
-    })
+    });
     $('#question_type').change(updatequestionattributes);
+
+    $('#question_type_button  li a').click(function(){
+        $(".btn:first-child .buttontext").text($(this).text());
+        $('#question_type').val($(this).data('value'));
+
+        updatequestionattributes();
+       });
 
     $('#MinimizeGroupWindow').click(function(){
         $('#groupdetails').hide();
@@ -202,61 +155,89 @@ $(document).ready(function(){
     $('#MaximizeGroupWindow').click(function(){
         $('#groupdetails').show();
     });
-    $('#tabs').tabs();
-    $("#flashmessage").notify().notify('create','themeroller',{},{custom:true,
+    $('#tabs').tabs({
+        activate: function(event, ui) {
+            if(history.pushState) {
+                history.pushState(null, null, '#'+ui.newPanel.attr('id'));
+            }
+            else {
+                location.hash = ui.newPanel.attr('id');
+            }
+        }
+    });
+    $('.tab-nav').tabs();
+    $(".flashmessage").each(function() {
+        $(this).notify().notify('create','themeroller',{},{custom:true,
         speed: 500,
         expires: 5000
-    });
-
-    if ($("#question_type").not('.none').length > 0 && $("#question_type").attr('type')!='hidden'){
-        $("#question_type").msDropDown({onInit:qTypeDropdownInit});
-
-        $("#question_type").change(function(event){
-            var selected_value = qDescToCode[''+$("#question_type_child .selected").text()];
-            OtherSelection(selected_value);
         });
+    });
+    if ($("#question_type_button").not('.none').length > 0 && $("#question_type_button").attr('type')!='hidden'){
+
+       qTypeDropdownInit();
+        $("#question_type_button").change(function(event){
+            OtherSelection(this.value);
+        });
+        $("#question_type_button").change();
     }
-    $("#question_type.none").change(function(event){
-        var selected_value = $("#question_type").val();
-        OtherSelection(selected_value);
+    else
+    {
+        $("#question_type.none").change(function(event){
+            OtherSelection(this.value);
+        });
+        $("#question_type.none").change();
+    }
+
+    // Confirmation modal
+    $('#confirmation-modal').on('show.bs.modal', function(e) {
+        // .btn-ok is the confirm <a> in the modal
+        $(this).find('.btn-ok').attr('href', $(e.relatedTarget).data('href'));
+        $(this).find('.modal-body-text').html($(e.relatedTarget).data('message'));
     });
 
-
+    // Error modal
+    $('#error-modal').on('show.bs.modal', function(e) {
+        $(this).find('.modal-body-text').html($(e.relatedTarget).data('message'));
+    });
 
 });
 
 function qTypeDropdownInit()
 {
-    $("#question_type_child a").each(function(index,element){
-
-        $(element).qtip({
-            style: {
-                margin: 15,
-                width: 450,
-                height: 'auto',
-                border: {
-                    width: 4,
-                    radius: 2
-                }
-            },
-            content: getToolTip($(element).text()),
-            position: {
-                corner:{
-                    target: 'leftMiddle',
-                    tooltip:'rightMiddle'
+    $(document).ready(function () {
+        $("#question_type_button .questionType").each(function(index,element){
+            $(element).qtip({
+                style: {
+                    classes: 'qtip-bootstrap'
                 },
-                adjust:{
-                    screen: true
+                content: getToolTip($(element).text()),
+                position: {
+                    my : 'center right',
+                    at: 'center left',
+                    target: $('label[for=question_type]'),
+                    viewport: $(window),
+                    adjust: {
+                        x: 0
+                    }
+
                 }
-            },
-            show: 'mouseover'
-            //hide: 'mouseout'
+            });
+
+        });
+    });
+    $(document).ready(function() {
+
+        $('.questionType').on('mouseenter', function(e){
+            //alert($(this).attr('class'));
+            $('.questionType').qtip('hide');
+            $(this).qtip('option', 'position.target', $(this).qtip('show'));
         });
 
+        $('.questionType').on('mouseleave', function(e){
+            $(this).qtip('hide');
+        });
     });
 }
-
-
 
 
 var aToolTipData = {
@@ -282,6 +263,7 @@ function getToolTip(type){
         }
         return returnval;
     }
+
     return "<img src='" + imgurl + "/screenshots/"+code+".png' />";
 }
 
@@ -289,6 +271,9 @@ function getToolTip(type){
 
 function updatequestionattributes()
 {
+    var type = $('#question_type').val();
+    OtherSelection(type);
+
     $('.loader').show();
     $('#advancedquestionsettings').html('');
     var selected_value = qDescToCode[''+$("#question_type_child .selected").text()];
@@ -323,13 +308,49 @@ function updatequestionattributes()
 function validatefilename (form, strmessage )
 {
     if (form.the_file.value == "") {
-        alert( strmessage );
+        $('#pleaseselectfile-popup').modal();
         form.the_file.focus();
         return false ;
     }
     return true ;
 }
 
+function doToolTip()
+{
+    $('.btntooltip').tooltip();
+
+    // Since you can only have one option per data-toggle,
+    // we need this to enable both modal and toggle on one
+    // button. E.g., <button data-toggle='modal' data-tooltip='true' title="foo">...</button>
+    $('[data-tooltip="true"]').tooltip();
+
+    $(function () {
+        $('[data-toggle="tooltip"]').tooltip()
+    })
+
+    // ToolTip on menu
+    $(".sf-menu li").each(function() {
+        tipcontent=$(this).children("a").children("img").attr('alt');
+        if(tipcontent && tipcontent!=""){
+            $(this).qtip({
+                content: {
+                    text: tipcontent
+                },
+                style: {
+                    classes: "qtip-light qtip-rounded"
+                },
+                position: {
+                    my: 'bottom left',
+                    at: "top right"
+                }
+            });
+            $(this).children("a").children("img").removeAttr('title');
+        }
+    });
+
+
+
+}
 
 // If the length of the element's string is 0 then display helper message
 function isEmpty(elem, helperMsg)
@@ -354,6 +375,23 @@ function arrHasDupes( A ) {                          // finds any duplicate arra
     return false;
 }
 
+/**
+ * Like arrHasDupes, but returns the duplicated item
+ *
+ * @param {array} A
+ * @return {mixed|boolean} Array item] or false if no duplicate is found
+ */
+function arrHasDupesWhich(A) {
+    var i, j, n;
+    n=A.length;
+    // to ensure the fewest possible comparisons
+    for (i=0; i<n; i++) {                        // outer loop uses each item i at 0 through n
+        for (j=i+1; j<n; j++) {              // inner loop only compares items j at i+1 to n
+            if (A[i]==A[j]) return A[i];
+    }}
+    return false;
+}
+
 
 // (c) 2006 Simon Wunderlin, License: GPL, hacks want to be free ;)
 // This fix forces Firefox to fire the onchange event if someone changes select box with cursor keys
@@ -366,12 +404,6 @@ function ev_gecko_select_keyup_ev(Ev) {
     return true;
 }
 
-function init_gecko_select_hack() {
-    var selects = document.getElementsByTagName("SELECT");
-    for(i=0; i<selects.length; i++)
-        selects.item(i).addEventListener("keyup", ev_gecko_select_keyup_ev, false);
-    return true;
-}
 
 
 function getkey(e)
@@ -406,10 +438,6 @@ function goodchars(e, goods)
 }
 
 
-function trim(stringToTrim) {
-    return stringToTrim.replace(/^\s+|\s+$/g,"");
-}
-
 function DoAdd()
 {
     if (document.getElementById("available_languages").selectedIndex>-1)
@@ -438,7 +466,32 @@ function DoRemove(minItems,strmsg)
         if (strmsg!=''){alert(strmsg);}
 }
 
+function UpdateLanguageIDs(mylangs,confirmtxt)
+{
+    document.getElementById("languageids").value = '';
 
+    var lbBox = document.getElementById("additional_languages");
+    for (var i = 0; i < lbBox.options.length; i++)
+        {
+        document.getElementById("languageids").value = document.getElementById("languageids").value + lbBox.options[i].value+ ' ';
+    }
+    if (mylangs)
+        {
+        if (checklangs(mylangs))
+            {
+            return true;
+        } else
+            {
+            return confirm(confirmtxt);
+        }
+    }
+}
+
+
+
+function trim(stringToTrim) {
+    return stringToTrim.replace(/^\s+|\s+$/g,"");
+}
 
 function AddItem(objListBox, strText, strId)
 {
@@ -466,28 +519,6 @@ function GetItemIndex(objListBox, strId)
         }
     }
     return -1;
-}
-
-
-function UpdateLanguageIDs(mylangs,confirmtxt)
-{
-    document.getElementById("languageids").value = '';
-
-    var lbBox = document.getElementById("additional_languages");
-    for (var i = 0; i < lbBox.options.length; i++)
-        {
-        document.getElementById("languageids").value = document.getElementById("languageids").value + lbBox.options[i].value+ ' ';
-    }
-    if (mylangs)
-        {
-        if (checklangs(mylangs))
-            {
-            return true;
-        } else
-            {
-            return confirm(confirmtxt);
-        }
-    }
 }
 
 function compareText (option1, option2) {
@@ -600,6 +631,11 @@ function htmlspecialchars (string, quote_style, charset, double_encode) {
     if (typeof quote_style === 'undefined' || quote_style === null) {
         quote_style = 2;
     }
+    // Not form phpjs: added because in some condition : subquestion can send null for string
+    // subquestion js use inline javascript function
+    if (typeof string === 'undefined' || string === null) {
+        string="";
+    }
     string = string.toString();    if (double_encode !== false) { // Put this first to avoid double-encoding
         string = string.replace(/&/g, '&amp;');
     }
@@ -638,29 +674,122 @@ jQuery.fn.center = function () {
     this.css("top", ( $(window).height() - this.height() ) / 2+$(window).scrollTop() + "px");
     this.css("left", ( $(window).width() - this.width() ) / 2+$(window).scrollLeft() + "px");
     return this;
-}
+};
 
 // Fix broken substr function with negative start value (in older IE)
+// From https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/substr
 if ('ab'.substr(-1) != 'b') {
-	String.prototype.substr = function(substr) {
-		return function(start, length) {
-			if (start < 0) start = this.length + start;
-			return substr.call(this, start, length);
-		}
-	}(String.prototype.substr);
+    String.prototype.substr = function(substr) {
+        return function(start, length) {
+            if (start < 0) start = this.length + start;
+            return substr.call(this, start, length);
+        };
+    }(String.prototype.substr);
+}
+
+function linksInDialog()
+{
+    $(function () {
+        var iframe = $('<iframe id="dialog" allowfullscreen></iframe>');
+        var dialog = $("<div></div>").append(iframe).appendTo("body").dialog({
+            autoOpen: false,
+            modal: false,
+            resizable: true,
+            width: "60%",
+            height: $(window).height()*0.6,
+            close: function () {
+                iframe.attr("src", "");
+            }
+        });
+        $(document).on('click','a[target=dialog]',function(event){
+            event.preventDefault();
+            var src = $(this).attr("href");
+            var title = $(this).attr("title");
+            if(!title && $(this).children("img[alt]"))
+                title = $(this).children("img[alt]").attr("alt");
+            iframe.attr({
+                src: src,
+            });
+            dialog.dialog("option", "title", title);
+            dialog.dialog("open");
+        });
+    });
+}
+function initializeAjaxProgress()
+{
+    $('#ajaxprogress').dialog({
+            'modal' : true,
+            'closeOnEscape' : false,
+            'title' : $('#ajaxprogress').attr('title'),
+            'autoOpen' : false,
+            'minHeight': 0,
+            'resizable': false
+        });
+    $('#ajaxprogress').bind('ajaxStart', function()
+    {
+        $(this).dialog('open');
+    });
+    $('#ajaxprogress').bind('ajaxStop', function()
+    {
+
+        $(this).dialog('close');
+    });
 }
 
 /**
-* Yii CSRF protection divs breaks this script so this function moves the 
-* hidden CSRF field out of the div and remove it if needed
-* 
-*/
-function removeCSRFDivs()
+ * Adapt cell to have a click on cell do a click on input:radio or input:checkbox (if unique)
+ * Using delegate the can be outside document.ready
+ */
+function tableCellAdapters()
 {
-    $('input[name=YII_CSRF_TOKEN]').each(function(){
-       parent = $(this).parent();
-       grandfather = $(parent).parent();
-       grandfather.append(this);
-       parent.remove();
+    $('table.activecell').delegate('tbody td input:checkbox,tbody td input:radio,tbody td label,tbody th input:checkbox,tbody th input:radio,tbody th label',"click", function(e) {
+        e.stopPropagation();
+    });
+    $('table.activecell').delegate('tbody td,tbody th',"click", function() {
+        if($(this).find("input:radio,input:checkbox").length==1)
+        {
+          $(this).find("input:radio").click();
+          $(this).find("input:radio").triggerHandler("click");
+          $(this).find("input:checkbox").click();
+          $(this).find("input:checkbox").triggerHandler("click");
+        }
     });
 }
+
+/**
+ * sendPost : create a form, fill with param and submit
+ *
+ * @param {string} action
+ * @param {} checkcode : deprecated
+ * @param {array} arrayparam
+ * @param {array} arrayval
+ *
+ */
+function sendPost(myaction,checkcode,arrayparam,arrayval)
+{
+    var $form = $("<form method='POST'>").attr("action", myaction);
+    for (var i = 0; i < arrayparam.length; i++)
+        $("<input type='hidden'>").attr("name", arrayparam[i]).attr("value", arrayval[i]).appendTo($form);
+    $("<input type='hidden'>").attr("name", 'YII_CSRF_TOKEN').attr("value", LS.data.csrfToken).appendTo($form);
+    $form.appendTo("body");
+    $form.submit();
+}
+function addHiddenElement(theform,thename,thevalue)
+{
+    var myel = document.createElement('input');
+    myel.type = 'hidden';
+    myel.name = thename;
+    theform.appendChild(myel);
+    myel.value = thevalue;
+    return myel;
+}
+function onlyUnique(value, index, self) {
+    return self.indexOf(value) === index;
+}
+
+/** For homepagesettings button edit */
+$(document).ready(function() {
+
+});
+
+// @license-end

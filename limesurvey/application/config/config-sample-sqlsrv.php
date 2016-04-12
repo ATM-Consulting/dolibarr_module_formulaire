@@ -22,18 +22,7 @@
 |
 */
 return array(
-    'basePath' => dirname(dirname(__FILE__)),
-    'runtimePath' => dirname(dirname(dirname(__FILE__))).DIRECTORY_SEPARATOR.'tmp'.DIRECTORY_SEPARATOR.'runtime',
     'name' => 'LimeSurvey',
-    'defaultController' => 'survey',
-    
-    'import' => array(
-        'application.core.*',
-        'application.models.*',
-        'application.controllers.*',
-        'application.modules.*',
-    ),
-    
     'components' => array(
         'db' => array(
             'connectionString' => 'sqlsrv:Server=localhost;Database=limesurvey',
@@ -46,7 +35,7 @@ return array(
         
         // Uncomment the following line if you need table-based sessions
         // 'session' => array (
-            // 'class' => 'system.web.CDbHttpSession',
+            // 'class' => 'application.core.web.DbHttpSession',
             // 'connectionID' => 'db',
             // 'sessionTableName' => '{{sessions}}',
         // ),

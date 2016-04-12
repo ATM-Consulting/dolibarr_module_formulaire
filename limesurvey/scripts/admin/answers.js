@@ -1,56 +1,23 @@
 var labelcache=[];
 $(document).ready(function(){
-    removeCSRFDivs();
+
     $('.tab-page:first .answertable tbody').sortable({   containment:'parent',
         update:aftermove,
         distance:3});
     $('.btnaddanswer').click(addinput);
     $('.btndelanswer').click(deleteinput);
-    $('#editanswersform').submit(code_duplicates_check)
-    $('#labelsetbrowser').dialog({ autoOpen: false,
-        modal: true,
-        width:800,
-        title: lsbrowsertitle});
-    $('#quickadd').dialog({ 
-		autoOpen: false,
-        modal: true,
-        width:600,
-        title: quickaddtitle,
-		open: function( event, ui ) {
-			$('textarea', this).show(); // IE 8 hack
-		},
-		beforeClose: function( event, ui ) {
-			$('textarea', this).hide(); // IE 8 hack
-		}
-	});
+    $('#editanswersform').submit(checkForDuplicateCodes)
     $('.btnlsbrowser').click(lsbrowser);
-    $('#btncancel').click(function(){
-        $('#labelsetbrowser').dialog('close');
-    });
     $('#btnlsreplace').click(transferlabels);
     $('#btnlsinsert').click(transferlabels);
     $('#labelsets').click(lspreview);
     $('#languagefilter').click(lsbrowser);
-
-    $('#btnqacancel').click(function(){
-        $('#quickadd').dialog('close');
-    });
     $('#btnqareplace').click(quickaddlabels);
     $('#btnqainsert').click(quickaddlabels);
-    $('.btnquickadd').click(quickadddialog);
-    $('#saveaslabel').dialog({ autoOpen: false,
-        modal: true,
-        width: 300,
-        title: saveaslabletitle});
     $('.bthsaveaslabel').click(getlabel);
-    $('#btnlacancel').click(function(){
-        $('#saveaslabel').dialog('close');
-    });
     $('input[name=savelabeloption]:radio').click(setlabel);
     flag = [false, false];
     $('#btnsave').click(savelabel);
-
-
     updaterowproperties();
 });
 
@@ -60,9 +27,9 @@ function deleteinput()
 
     // 1.) Check if there is at least one answe
 
-    countanswers=$(this).parent().parent().parent().children().length;
+    countanswers=$(this).closest("tbody").children("tr").length;//Maybe use class is better
     if (countanswers>1)
-        {
+    {
         // 2.) Remove the table row
         var x;
         classes=$(this).closest('tr').attr('class').split(' ');
@@ -104,7 +71,8 @@ function deleteinput()
 function addinput()
 {
     var x;
-    classes=$(this).closest('tr').attr('class').split(' ');
+    classes=$(this).parent().parent().attr('class').split(' ');
+    console.log($(this).parent().parent().attr('class'));
     for (x in classes)
         {
         if (classes[x].substr(0,3)=='row'){
@@ -118,10 +86,6 @@ function addinput()
     languages=langs.split(';');
 
     sNextCode=getNextCode($(this).parent().parent().find('.code').val());
-    while ($(this).parent().parent().parent().find('input[value="'+sNextCode+'"]').length>0 && sNextCode!=$(this).parent().parent().find('.code').val())
-    {
-        sNextCode=getNextCode(sNextCode);
-    }
 
     for (x in languages)
         {
@@ -137,11 +101,51 @@ function addinput()
             assessment_type='hidden';
         }
         if (x==0) {
-            inserthtml='<tr class="row_'+newposition+'" style="display:none;"><td><img class="handle" src="' + sImageURL + 'handle.png" /></td><td><input class="code" onkeypress="return goodchars(event,\'1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWZYZ_\')" type="text" maxlength="5" size="5" value="'+htmlspecialchars(sNextCode)+'" /></td><td '+assessment_style+'><input class="assessment" type="'+assessment_type+'" maxlength="5" size="5" value="1"/></td><td><input type="text" size="100" class="answer" value="'+htmlspecialchars(newansweroption_text)+'"></input><a class="editorLink"><img class="btneditanswerena" src="' + sImageURL + 'edithtmlpopup.png" width="16" height="16" border="0" /><img class="btneditanswerdis" alt="Give focus to the HTML editor popup window" src="' + sImageURL + 'edithtmlpopup_disabled.png" style="display: none;" width="16" height="16" align="top" border="0" /></a></td><td><img src="' + sImageURL + 'addanswer.png" class="btnaddanswer" /><img src="' + sImageURL + 'deleteanswer.png" class="btndelanswer" /></td></tr>'
+            inserthtml=
+            '<tr class="row_'+newposition+'" style="display:none;">'+
+            '   <td>'+
+            '       <span class="glyphicon glyphicon-move"></span>'+
+            '   </td>'+
+            '   <td>'+
+            '       <input class="code first-in-answersjs form-control input-lg" onkeypress="return goodchars(event,\'1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWZYZ_\')" type="text" maxlength="5" size="20" required value="'+htmlspecialchars(sNextCode)+'" />'+
+            '   </td>'+
+            '   <td '+assessment_style+'>'+
+            '       <input class="assessment" type="'+assessment_type+'" maxlength="5" size="5" value="1"/>'+
+            '   </td>'+
+            '   <td>'+
+            '       <div class="col-sm-12">'+
+            '           <input type="text" size="20" class="answer first-inanswerjs form-control input-lg" placeholder="'+htmlspecialchars(newansweroption_text)+'" value="" />'+
+            '       </div>'+
+            '   </td>'+
+            '   <td>'+
+            '           <a class="editorLink">'+
+            '               <span class="glyphicon glyphicon-pencil btneditanswerena" data-toggle="tooltip" data-placement="bottom" title="Start HTML editor in a popup window" ></span>'+
+            '               <span class="btneditanswerdis glyphicon glyphicon-pencil text-success" title="Give focus to the HTML editor popup window" style="display: none;"></span>'+
+            '           </a>'+
+            '       <span class="btnaddanswer icon-add text-success"></span>'+
+            '       <span class="btndelanswer glyphicon glyphicon-trash text-warning"></span>'+
+            '   </td>'+
+            '</tr>'
         }
         else
             {
-            inserthtml='<tr class="row_'+newposition+'" style="display:none;"><td>&nbsp;</td><td>'+htmlspecialchars(sNextCode)+'</td><td><input type="text" size="100" class="answer" value="'+htmlspecialchars(newansweroption_text)+'"></input><a class="editorLink"><img class="btneditanswerena" src="' + sImageURL + 'edithtmlpopup.png" width="16" height="16" border="0" /><img class="btneditanswerdis" alt="Give focus to the HTML editor popup window" src="' + sImageURL + 'edithtmlpopup_disabled.png" style="display: none;" width="16" height="16" align="top" border="0" /></a></td><td>&nbsp;</td></tr>'
+            inserthtml=
+            '<tr class="row_'+newposition+'" style="display:none;">'+
+            '   <td>&nbsp;</td>'+
+            '   <td>'+htmlspecialchars(sNextCode)+'</td>'+
+
+            '   <td>'+
+            '       <div class="col-sm-12">'+
+            '           <input type="text" size="20" class="answer second-in-answerjs form-control input-lg" placeholder="'+htmlspecialchars(newansweroption_text)+'" value="" />'+
+            '       </div>'+
+            '   </td>'+
+            '   <td>'+
+            '           <a class="editorLink">'+
+            '               <span class="glyphicon glyphicon-pencil btneditanswerena" data-toggle="tooltip" data-placement="bottom" title="Start HTML editor in a popup window" ></span>'+
+            '               <span class="btneditanswerdis glyphicon glyphicon-pencil text-success" title="Give focus to the HTML editor popup window" style="display: none;"></span>'+
+            '           </a>'+
+            '   </td>'+
+            '</tr>'
         }
         tablerow.after(inserthtml);
         tablerow.next().find('.btnaddanswer').click(addinput);
@@ -156,11 +160,6 @@ function addinput()
     }
     $('.row_'+newposition).fadeIn('slow');
     $('.row_'+newposition).show(); //Workaround : IE does not show with fadeIn only
-
-    if(languagecount>1)
-        {
-
-    }
 
     $('.tab-page:first .answertable tbody').sortable('refresh');
     updaterowproperties();
@@ -219,7 +218,7 @@ function updaterowproperties()
         var rownumber=1;
         $(this).children('tr').each(function(){
 
-            $(this).removeClass();
+            $(this).attr('class','');//see http://bugs.jqueryui.com/ticket/9015
             if (highlight){
                 $(this).addClass('highlight');
             }
@@ -252,32 +251,42 @@ function updatecodes()
 
 }
 
-function getNextCode(sourcecode)
+function getNextCode(sSourceCode)
 {
     i=1;
     found=true;
-    foundnumber=-1;
-    while (i<=sourcecode.length && found)
+    mNumberFound=-1;
+    while (i<=sSourceCode.length && found)
     {
-        found=is_numeric(sourcecode.substr(-i));
+        found=is_numeric(sSourceCode.substr(-i));
         if (found)
             {
-            foundnumber=sourcecode.substr(-i);
+            mNumberFound=sSourceCode.substr(-i);
             i++;
         }
     }
-    if (foundnumber==-1)
-        {
-        return(sourcecode);
+    if (mNumberFound==-1)
+    {
+        sBaseCode=sSourceCode;
+        mNumberFound=0
     }
     else
-        {
-        foundnumber++;
-        foundnumber=foundnumber+'';
-        result=sourcecode.substr(0,sourcecode.length-foundnumber.length)+foundnumber;
-        return(result);
+    {
+        sBaseCode=sSourceCode.substr(0,sSourceCode.length-mNumberFound.length);
     }
-
+    var iNumberFound=+mNumberFound;
+    do
+    {
+        iNumberFound=iNumberFound+1;
+        sNewNumber=iNumberFound+'';
+        sResult=sBaseCode+sNewNumber;
+        if (sResult.length>5)
+        {
+          sResult=sResult.substr(sResult.length - 5);
+        }
+    }
+    while (areCodesUnique(sResult)==false);
+    return(sResult);
 }
 
 function is_numeric (mixed_var) {
@@ -290,7 +299,33 @@ function popupeditor()
     start_popup_editor(input_id);
 }
 
-function code_duplicates_check()
+/**
+* Checks for duplicate codes and shows an error message & returns false if there are any duplicates
+*
+* @returns {Boolean}
+*/
+function checkForDuplicateCodes()
+{
+    if  (areCodesUnique('')==false)
+    {
+        alert(duplicateanswercode);
+        return false
+    }
+    else
+    {
+        return true;
+    }
+}
+
+/**
+* Check if all existing codes are unique
+* If sNewValue is not empty then only sNewValue is checked for uniqueness against the existing codes
+*
+* @param sNewValue
+*
+* @returns {Boolean} False if codes are not unique
+*/
+function areCodesUnique(sNewValue)
 {
     languages=langs.split(';');
     var dupefound=false;
@@ -299,9 +334,13 @@ function code_duplicates_check()
         $(this).find('tr .code').each(function(){
             codearray.push($(this).val());
         })
+        if (sNewValue!='')
+        {
+            codearray=codearray.filter( onlyUnique );
+            codearray.push(sNewValue);
+        }
         if (arrHasDupes(codearray))
             {
-            alert(duplicateanswercode);
             dupefound=true;
             return;
         }
@@ -315,13 +354,8 @@ function code_duplicates_check()
 function lsbrowser()
 {
     scale_id=removechars($(this).attr('id'));
-    $('#labelsetbrowser').dialog( 'open' );
     surveyid=$('input[name=sid]').val();
-    /*    match=0;
-    if ($('#languagefilter').attr('checked')==true)
-    {
-    match=1;
-    }*/
+
     $.getJSON(lspickurl,{sid:surveyid, match:1},function(json){
         var x=0;
         $("#labelsets").removeOption(/.*/);
@@ -368,62 +402,82 @@ function lspreview()
             data: {lid:lsid, sid:surveyid},
             cache: true,
             success: function(json){
-                $("#labelsetpreview").tabs('destroy');
                 $("#labelsetpreview").empty();
-                var tabindex='';
-                var tabbody='';
+                var tabindex='<ul class="nav nav-tabs">';
+                var tabbody='<div class="tab-content">';
+                var count=0;
                 for ( x in json)
-                    {
-
+                {
                     language=json[x];
                     for (y in language)
+                    {
+                        if(count==0)
                         {
-                        tabindex=tabindex+'<li><a href="#language_'+y+'">'+language[y][1]+'</a></li>';
-                        tabbody=tabbody+"<div id='language_"+y+"'><table class='limetable'>";
+                            active="active";
+                            bodyactive="in active";
+                            count++;
+                        }
+                        else
+                        {
+                            active = bodyactive = "";
+                        }
+
+                        //tabindex=tabindex+'<li><a href="#language_'+y+'">'+language[y][1]+'</a></li>';
+                        //tabbody=tabbody+"<div id='language_"+y+"'><table class='limetable'>";
+
+                        tabindex=tabindex+
+                            '<li role="presentation" class="'+active+'">'+
+                            '   <a data-toggle="tab" href="#language_'+y+'">'+
+                                    language[y][1]+
+                            '   </a>'+
+                            '</li>';
+
+                        tabbody=tabbody+
+                                '<div id="language_'+y+'" class="tab-page tab-pane fade '+bodyactive+'">'+
+                                '   <table class="limetable">';
+
                         lsrows=language[y][0];
                         tablerows='';
                         var highlight=true;
                         for (z in lsrows)
-                            {
+                        {
                             highlight=!highlight;
                             tabbody=tabbody+'<tbody><tr';
                             if (highlight==true) {
                                 tabbody=tabbody+" class='highlight' ";
                             }
-                            if (lsrows[z].title==null)
-                                {
+                            if (lsrows[z].title==null) {
                                 lsrows[z].title='';
                             }
-                            tabbody=tabbody+'><td>'+lsrows[z].code+'</td>';
-                            if (assessmentvisible)
-                                {
-                                tabbody=tabbody+'<td>'+lsrows[z].assessment_value+'</td>';
-                            }
-                            tabbody=tabbody+'<td>'+lsrows[z].title+'</td></tr><tbody>';
-                        }
-                        tabbody=tabbody+'<thead><tr><th>'+strcode+'</th>';
-                        if (assessmentvisible)
+                            tabbody=tabbody+'><td>'+lsrows[z].code+'</td><td';
+                            if (!assessmentvisible)
                             {
-                            tabbody=tabbody+'<th>'+sAssessmentValue+'</th>';
+                                tabbody=tabbody+' style="display:none;"';
+                            }
+                            tabbody=tabbody+'>'+lsrows[z].assessment_value+'</td>';
+                            tabbody=tabbody+'<td>'+htmlspecialchars(lsrows[z].title)+'</td></tr><tbody>';
                         }
+                        tabbody=tabbody+'<thead><tr><th>'+strcode+'</th><th';
+                        if (!assessmentvisible)
+                        {
+                            tabbody=tabbody+' style="display:none;"';
+                        }
+                        tabbody=tabbody+'>'+sAssessmentValue+'</th>';
                         tabbody=tabbody+'<th>'+strlabel+'</th></tr></thead></table></div>';
                     }
                 }
-                $("#labelsetpreview").append('<ul>'+tabindex+'</ul>'+tabbody);
-                labelcache[lsid]='<ul>'+tabindex+'</ul>'+tabbody;
-                $("#labelsetpreview").tabs();
-        }}
-        );
+                tabindex=tabindex+'</ul>';
+                tabbody=tabbody+'</div>';
+                $("#labelsetpreview").append(tabindex+tabbody);
+                labelcache[lsid]=tabindex+tabbody;
+            }
+        });
     }
     else
-        {
-        $("#labelsetpreview").tabs('destroy');
+    {
         $("#labelsetpreview").empty();
         $("#labelsetpreview").append(labelcache[lsid]);
-        $("#labelsetpreview").tabs();
     }
-
-
 }
 
 /**
@@ -514,11 +568,59 @@ function transferlabels()
                         for (k in lsrows)
                             {
                             if (x==0) {
-                                tablerows=tablerows+'<tr class="row_'+k+'" ><td><img class="handle" src="' + sImageURL + 'handle.png" /></td><td><input class="code" onkeypress="return goodchars(event,\'1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWZYZ_\')" type="text" maxlength="5" size="5" value="'+htmlspecialchars(lsrows[k].code)+'" /></td><td '+assessment_style+'><input class="assessment" type="'+assessment_type+'" maxlength="5" size="5" value="'+htmlspecialchars(lsrows[k].assessment_value)+'"/></td><td><input type="text" size="100" class="answer" value="'+htmlspecialchars(lsrows[k].title)+'"></input><a class="editorLink"><img class="btneditanswerena" src="' + sImageURL + 'edithtmlpopup.png" width="16" height="16" border="0" /><img class="btneditanswerdis" alt="Give focus to the HTML editor popup window" src="' + sImageURL + 'edithtmlpopup_disabled.png" style="display: none;" width="16" height="16" align="top" border="0" /></a></td><td><img src="' + sImageURL + 'addanswer.png" class="btnaddanswer" /><img src="' + sImageURL + 'deleteanswer.png" class="btndelanswer" /></td></tr>'
+                                tablerows=tablerows+
+                                '<tr class="row_'+k+'" >'+
+                                '   <td>'+
+                                '       <span class="glyphicon glyphicon-move"></span>'+
+                                '   </td>'+
+                                '   <td>'+
+                                '       <input class="code second-in-answerjs form-control input-lg" onkeypress="return goodchars(event,\'1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWZYZ_\')" type="text" maxlength="5" size="20" value="'+htmlspecialchars(lsrows[k].code)+'" />'+
+                                '   </td>'+
+                                '   <td '+assessment_style+'><input class="assessment" type="'+assessment_type+'" maxlength="5" size="5" value="'+htmlspecialchars(lsrows[k].assessment_value)+'"/>'+
+                                '   </td>'+
+
+                                '   <td>'+
+                                '       <div class="col-sm-12">'+
+                                '           <input type="text" size="20" class="answer third-in-answerjs  form-control input-lg" value="'+htmlspecialchars(lsrows[k].title)+'"></input>'+
+                                '       </div>'+
+                                '   </td>'+
+
+                                '   <td>'+
+                                '           <a class="editorLink">'+
+                                '               <span class="glyphicon glyphicon-pencil btneditanswerena" data-toggle="tooltip" data-placement="bottom" title="Start HTML editor in a popup window" ></span>'+
+                                '               <span class="btneditanswerdis glyphicon glyphicon-pencil text-success" title="Give focus to the HTML editor popup window" style="display: none;"></span>'+
+                                '           </a>'+
+
+                                '       <span class="btnaddanswer icon-add text-success"></span>'+
+                                '       <span class="btndelanswer glyphicon glyphicon-trash text-warning"></span>'+
+                                '   </td>'+
+                                '</tr>'
                             }
                             else
                                 {
-                                tablerows=tablerows+'<tr class="row_'+k+'" ><td>&nbsp;</td><td>'+htmlspecialchars(lsrows[k].code)+'</td><td><input type="text" size="100" class="answer" value="'+htmlspecialchars(lsrows[k].title)+'"></input><a class="editorLink"><img class="btneditanswerena" src="' + sImageURL + 'edithtmlpopup.png" width="16" height="16" border="0" /><img class="btneditanswerdis" alt="Give focus to the HTML editor popup window" src="' + sImageURL + 'edithtmlpopup_disabled.png" style="display: none;" width="16" height="16" align="top" border="0" /></a></td><td><img src="' + sImageURL + 'addanswer.png" class="btnaddanswer" /><img src="' + sImageURL + 'deleteanswer.png" class="btndelanswer" /></td></tr>'
+                                tablerows=tablerows+
+                                '<tr class="row_'+k+'" >'+
+                                '   <td>&nbsp;</td>'+
+                                '   <td>'+
+                                        htmlspecialchars(lsrows[k].code)+
+                                '   </td>'+
+
+                                '   <td>'+
+                                '       <div class="col-sm-12">'+
+                                '           <input type="text" size="20" class="answer fourth-in-answerjs form-control input-lg" value="'+htmlspecialchars(lsrows[k].title)+'"></input>'+
+                                '       </div>'+
+                                '   </td>'+
+
+                                '   <td>'+
+                                '           <a class="editorLink">'+
+                                '               <span class="glyphicon glyphicon-pencil btneditanswerena" data-toggle="tooltip" data-placement="bottom" title="Start HTML editor in a popup window" ></span>'+
+                                '               <span class="btneditanswerdis glyphicon glyphicon-pencil text-success" title="Give focus to the HTML editor popup window" style="display: none;"></span>'+
+                                '           </a>'+
+
+                                '       <span class="btnaddanswer icon-add text-success"></span>'+
+                                '       <span class="btndelanswer glyphicon glyphicon-trash text-warning"></span>'+
+                                '   </td>'+
+                                '</tr>'
                             }
                         }
                     }
@@ -529,7 +631,27 @@ function transferlabels()
                     var k=0;
                     for (k in lsrows)
                         {
-                        tablerows=tablerows+'<tr class="row_'+k+'" ><td>&nbsp;</td><td>'+htmlspecialchars(lsrows[k].code)+'</td><td><input type="text" size="100" class="answer" value="'+htmlspecialchars(lsrows[k].title)+'"></input><a class="editorLink"><img class="btneditanswerena" src="../images/edithtmlpopup.png" width="16" height="16" border="0" /><img class="btneditanswerdis" alt="Give focus to the HTML editor popup window" src="../images/edithtmlpopup_disabled.png" style="display: none;" width="16" height="16" align="top" border="0" /></a></td><td><img src="../images/addanswer.png" class="btnaddanswer" /><img src="../images/deleteanswer.png" class="btndelanswer" /></td></tr>'
+                        tablerows=tablerows+
+                        '<tr class="row_'+k+'" >'+
+                        '   <td>&nbsp;</td>'+
+                        '   <td>'+htmlspecialchars(lsrows[k].code)+'</td>'+
+
+                        '   <td>'+
+                        '       <div class="col-sm-12">'+
+                        '           <input type="text" size="20" class="answer fifth-in-answerjs form-control input-lg" value="'+htmlspecialchars(lsrows[k].title)+'"></input>'+
+                        '       </div>'+
+                        '   </td>'+
+
+                        '   <td>'+
+                        '           <a class="editorLink">'+
+                        '               <span class="glyphicon glyphicon-pencil btneditanswerena" data-toggle="tooltip" data-placement="bottom" title="Start HTML editor in a popup window" ></span>'+
+                        '               <span class="btneditanswerdis glyphicon glyphicon-pencil text-success" title="Give focus to the HTML editor popup window" style="display: none;"></span>'+
+                        '           </a>'+
+
+                        '       <span class="btnaddanswer icon-add text-success" />'+
+                        '       <span class="btndelanswer  glyphicon glyphicon-trash text-warning" />'+
+                        '   </td>'+
+                        '</tr>'
                     }
                 }
                 if (lsreplace) {
@@ -550,7 +672,6 @@ function transferlabels()
                     }
                 });
             }
-            $('#labelsetbrowser').dialog('close');
             $('.tab-page:first .answertable tbody').sortable('refresh');
             updaterowproperties();
 
@@ -565,11 +686,11 @@ function transferlabels()
 function quickaddlabels()
 {
     if ($(this).attr('id')=='btnqareplace')
-        {
+    {
         var lsreplace=true;
     }
     else
-        {
+    {
         var lsreplace=false;
     }
 
@@ -600,31 +721,77 @@ function quickaddlabels()
         }
         tablerows='';
         for (k in lsrows)
-            {
+        {
             thisrow=lsrows[k].splitCSV(separatorchar);
             if (thisrow.length<=languages.length)
-                {
+            {
                 thisrow.unshift(parseInt(k)+1);
             }
             else
-                {
+            {
                 thisrow[0]=thisrow[0].replace(/[^A-Za-z0-9]/g, "").substr(0,5);
             }
 
             if (typeof thisrow[parseInt(x)+1]=='undefined')
-                {
+            {
                 thisrow[parseInt(x)+1]=thisrow[1];
             }
-	    var escaped_value = thisrow[parseInt(x)+1].replace('"', '&quot;');
-            if (x==0) {
-                tablerows=tablerows+'<tr class="row_'+k+'" ><td><img class="handle" src="' + sImageURL + 'handle.png" /></td><td><input class="code" type="text" maxlength="5" size="5" value="'+thisrow[0]+'" /></td><td '+assessment_style+'><input class="assessment" type="'+assessment_type+'" maxlength="5" size="5" value="1"/></td><td><input type="text" size="100" class="answer" value="'+escaped_value+'"></input><a class="editorLink"><img class="btneditanswerena" src="' + sImageURL + 'edithtmlpopup.png" width="16" height="16" border="0" /><img class="btneditanswerdis" alt="Give focus to the HTML editor popup window" src="' + sImageURL + 'edithtmlpopup_disabled.png" style="display: none;" width="16" height="16" align="top" border="0" /></a></td><td><img src="' + sImageURL + 'addanswer.png" class="btnaddanswer" /><img src="' + sImageURL + 'deleteanswer.png" class="btndelanswer" /></td></tr>'
+
+            var escaped_value = thisrow[parseInt(x)+1].replace('"', '&quot;');
+            if (x==0)
+            {
+                tablerows=tablerows+
+                '<tr class="row_'+k+'" >'+
+                '   <td>'+
+                '       <span class="glyphicon glyphicon-move"></span>'+
+                '   </td>'+
+                '   <td>'+
+                '       <input class="code third-in-answerjs form-control input-lg" type="text" maxlength="5" size="20" value="'+thisrow[0]+'" onkeypress="return goodchars(event,\'1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWZYZ_\')"  />'+
+                '   </td>'+
+                '   <td '+assessment_style+'>'+
+                '       <input class="assessment" type="'+assessment_type+'" maxlength="5" size="5" value="1"/>'+
+                '   </td>'+
+                '   <td style="vertical-align: middle;">'+
+                '       <div class="col-sm-12">'+
+                '           <input type="text" size="20" class="answer form-control input-lg" value="'+escaped_value+'"></input>'+
+                '       </div>'+
+                '   </td>'+
+                '   <td>'+
+                '           <a class="editorLink">'+
+                '               <span class="glyphicon glyphicon-pencil btneditanswerena" data-toggle="tooltip" data-placement="bottom" title="Start HTML editor in a popup window" ></span>'+
+                '               <span class="btneditanswerdis glyphicon glyphicon-pencil text-success" title="Give focus to the HTML editor popup window" style="display: none;"></span>'+
+                '           </a>'+
+
+                '       <span class="btnaddanswer icon-add text-success"></span>'+
+                '       <span class="btndelanswer glyphicon glyphicon-trash text-warning"></span>'+
+                '   </td>'+
+                '</tr>'
             }
             else
                 {
-                tablerows=tablerows+'<tr class="row_'+k+'" ><td>&nbsp;</td><td>&nbsp;</td><td><input type="text" size="100" class="answer" value="'+escaped_value+'"></input><a class="editorLink"><img class="btneditanswerena" src="' + sImageURL + 'edithtmlpopup.png" width="16" height="16" border="0" /><img class="btneditanswerdis" alt="Give focus to the HTML editor popup window" src="' + sImageURL + 'edithtmlpopup_disabled.png" style="display: none;" width="16" height="16" align="top" border="0" /></a></td><td><img src="' + sImageURL + 'addanswer.png" class="btnaddanswer" /><img src="' + sImageURL + 'deleteanswer.png" class="btndelanswer" /></td></tr>'
+                tablerows=tablerows+
+                '<tr class="row_'+k+'" >'+
+                '   <td>&nbsp;</td>'+
+                '   <td>&nbsp;</td>'+
+                '   <td>'+
+                '       <div class="col-sm-12">'+
+                '           <input type="text" size="20" class="answer sixt-in-answerjs form-control input-lg" value="'+escaped_value+'"></input>'+
+                '       </div>'+
+                '   </td>'+
+                '   <td>'+
+                '           <a class="editorLink">'+
+                '               <span class="glyphicon glyphicon-pencil btneditanswerena" data-toggle="tooltip" data-placement="bottom" title="Start HTML editor in a popup window" ></span>'+
+                '               <span class="btneditanswerdis glyphicon glyphicon-pencil text-success" title="Give focus to the HTML editor popup window" style="display: none;"></span>'+
+                '           </a>'+
+
+                '       <span class="btnaddanswer  icon-add text-success"></span>'+
+                '       <span class="btndelanswer glyphicon glyphicon-trash text-warning"></span>'+
+                '   </td>'+
+                '</tr>'
 
             }
         }
+
         if (lsreplace) {
             $('#answers_'+languages[x]+'_'+scale_id+' tbody').empty();
         }
@@ -642,18 +809,16 @@ function quickaddlabels()
             }
         });
     }
-    $('#quickadd').dialog('close');
     $('#quickaddarea').val('');
     $('.tab-page:first .answertable tbody').sortable('refresh');
     updaterowproperties();
+    $('#quickaddModal').modal('hide');
 }
 
 function getlabel()
 {
     var answer_table = $(this).parent().children().eq(0);
     scale_id=removechars($(this).attr('id'));
-
-    $('#saveaslabel').dialog('open');
     updaterowproperties();
 }
 
@@ -663,9 +828,12 @@ function setlabel()
     {
         case 'newlabel':
         if(!flag[0]){
-            $('#lasets').remove();
-            $($(this).next().next()).after('<label for="laname">Label Set Name :</label> ' +
-            '<input type="text" name="laname" id="laname">');
+            $('#lasets').parent().remove();
+            $(this).parent().after(
+                '<p class="label-name-wrapper">'+
+                '   <label for="laname">'+sLabelSetName+':</label> ' +
+                '   <input type="text" name="laname" id="laname" class="form-control">'+
+                '</p>');
             flag[0] = true;
             flag[1] = false;
         }
@@ -673,9 +841,13 @@ function setlabel()
 
         case 'replacelabel':
         if(!flag[1]){
-            $('#laname').remove();
-            $('[for=laname]').remove();
-            $($(this).next().next()).after('<select name="laname" id="lasets"><option value=""></option></select>');
+            $('#laname').parent().remove();
+            $(this).parent().after(
+                '<p class="label-name-wrapper">'+
+                '   <select name="laname" id="lasets" class="form-control">'+
+                '       <option value=""></option>'+
+                '   </select>'+
+                '</p>');
             jQuery.getJSON(lanameurl, function(data) {
                 $.each(data, function(key, val) {
                     $('#lasets').append('<option value="' + key + '">' + val + '</option>');
@@ -704,22 +876,13 @@ function savelabel()
     }
     else
         {
-        $('#dialog-confirm-replace').dialog({
-            resizable: false,
-            height: 160,
-            modal: true,
-            buttons: [{
-                text: ok,
-                click: function() {
-                    $(this).dialog("close");
-                    ajaxreqsave();
-            }},{
-                text: cancel,
-                click: function() {
-                    check = false;
-                    $(this).dialog("close");
-            }}
-            ]
+        aLanguages = langs.split(';');
+        $.post(sCheckLabelURL, { languages: aLanguages, lid: lid}, function(data) {
+           $('#strReplaceMessage').html(data);
+           $('#dialog-confirm-replaceModal').modal();
+           $('#btnlconfirmreplace').click(function(){
+               ajaxreqsave();
+           });
         });
     }
 }
@@ -729,19 +892,21 @@ function ajaxcheckdup()
     check = true; //set check to true everytime on call
     return jQuery.getJSON(lanameurl, function(data) {
         $.each(data, function(key, val) {
+
+            $("#saveaslabelModal").modal('hide');
+            $("#dialog-confirm-replaceModal").modal('hide');
+
+
             if($('#laname').val() == val)
                 {
-                $("#dialog-duplicate").dialog({
-                    resizable: false,
-                    height: 160,
-                    modal: true,
-                    buttons: [{
-                        text: ok,
-                        click: function() {
-                            $(this).dialog("close");
-                        }
-                    }]
-                });
+                    if($('#dialog-duplicate').is(":visible"))
+                    {
+                        $('#dialog-duplicate').effect( "pulsate", {times:3}, 3000 );
+                    }
+                    else
+                    {
+                        $('#dialog-duplicate').show();
+                    }
                 check = false;
                 return false;
             }
@@ -751,12 +916,18 @@ function ajaxcheckdup()
 
 function ajaxreqsave() {
     var lid = $('#lasets').val() ? $('#lasets').val() : 0;
-
     // get code for the current scale
     var code = new Array();
     $('.code').each(function(index) {
         if($(this).attr('id').substr(-1) === scale_id)
             code.push($(this).val());
+    });
+
+    // get assessment values for the current scale
+    var assessmentvalues = new Array();
+    $('.assessment').each(function(index) {
+        if($(this).attr('id').substr(-1) === scale_id)
+            assessmentvalues.push($(this).val());
     });
 
     answers = new Object();
@@ -772,41 +943,30 @@ function ajaxreqsave() {
     }
 
 
-    $.post(lasaveurl, { laname: $('#laname').val(), lid: lid, code: code, answers: answers }, function(data) {
-        $("#saveaslabel").dialog('close');
+    $.post(lasaveurl, { laname: $('#laname').val(), lid: lid, code: code, answers: answers, assessmentvalues:assessmentvalues }, function(data) {
+        $("#saveaslabelModal").modal('hide');
+        $("#dialog-confirm-replaceModal").modal('hide');
+
         if(jQuery.parseJSON(data) == "ok")
+        {
+            if($('#dialog-result').is(":visible"))
             {
-            $("#dialog-result").html(lasuccess);
-            $('#dialog-result').dialog({
-                height: 160,
-                width: 250,
-                buttons: [{
-                    text: ok,
-                    click: function() {
-                        $(this).dialog("close");
-                    }
-                }]
-            });
+                $('#dialog-result-content').empty().append(lasuccess);
+                $('#dialog-result').effect( "pulsate", {times:3}, 3000 );
+            }
+            else
+            {
+                $('#dialog-result').removeClass('alert-warning').addClass('alert-success');
+                $('#dialog-result-content').empty().append(lasuccess);
+                $('#dialog-result').show();
+            }
         }
         else
-            {
-            $("#dialog-result").html(lafail);
-            $('#dialog-result').dialog({
-                height: 160,
-                width: 250,
-                buttons: [{
-                    text: ok,
-                    click: function() {
-                        $(this).dialog("close");
-                    }
-                }]
-            });
+        {
+
+            $('#dialog-result').removeClass('alert-success').addClass('alert-warning');
+            $('#dialog-result-content').empty().append(lafail);
+            $('#dialog-result').show();
         }
     });
-}
-
-function quickadddialog()
-{
-    scale_id=removechars($(this).attr('id'));
-    $('#quickadd').dialog('open');
 }

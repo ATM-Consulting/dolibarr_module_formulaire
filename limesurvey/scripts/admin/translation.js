@@ -4,11 +4,10 @@ var iRunningThreads=0;
 $(document).ready(function(){
 
     intThrottlingRate = 550; // 1 request per 550 ms
-    $('#translationtabs').tabs();
     $('#translationtabs').show();
     $('#translationloading').hide();
 
-    $('input.auto-trans').live('click',function(ui)
+    $('input.auto-trans').click(function(ui)
     {
         var sTarget_id = $(ui.target).attr('id');
 
@@ -29,7 +28,6 @@ $(document).ready(function(){
             case 'nn': sToLang='no'; break;
             case 'pt-BR': sToLang='pt'; break;
             case 'es-MX': sToLang='es'; break;
-            zh-Hans
         }
 
         $("._from_",$(ui.target).parent()).each(function(index,element)
@@ -54,7 +52,7 @@ $(document).ready(function(){
 
 
                 if (!sTargetInnerText)
-                    sTargetInnerText = ""
+                    sTargetInnerText = "";
 
                 if (sTargetInnerText.length > 0){
                     bIgnore = true;
@@ -69,7 +67,7 @@ $(document).ready(function(){
 
                 sToConvert = sToConvert.replace( new RegExp( "\\n", "g" ),'\\n');
                 sToConvert = sToConvert.replace(/"/g,'\\"');
-                setTimeout('fDoTranslateAjax("'+sBaseLang+'","'+sToLang+'","'+sToConvert+'","'+sId+'");',index*intThrottlingRate)
+                setTimeout('fDoTranslateAjax("'+sBaseLang+'","'+sToLang+'","'+sToConvert+'","'+sId+'");',index*intThrottlingRate);
             }
 
         });
@@ -91,11 +89,11 @@ function fDoTranslateAjax(sBaseLang,sToLang,sToConvert,sId)
       $('.ajax-loader').css('display','inline');
       iRunningThreads++;
       $.ajax({
-            url:'admin.php',
+            url: translateJsonUrl,
             datatype: 'json',
             async: true,
+            type: 'POST',
             data:{
-                action: 'ajaxtranslategoogleapi',
                 baselang:sBaseLang,
                 tolang:sToLang,
                 text:sToConvert
@@ -114,7 +112,7 @@ function fDoTranslateAjax(sBaseLang,sToLang,sToConvert,sId)
                 }
                 else if (!aData.error)
                 {
-                    $("[name="+sId+"]").html(aData.converted);
+                    $("textarea[name="+sId+"]").val(aData.converted);
 
                     var oMyEditor = CKEDITOR.instances[sId];
 

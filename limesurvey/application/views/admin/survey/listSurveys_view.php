@@ -1,69 +1,174 @@
-<br />
-<script type='text/javascript'>
-    var getuserurl = '<?php echo $this->createUrl('admin/survey/sa/ajaxgetusers'); ?>';
-    var ownerediturl = '<?php echo $this->createUrl('admin/survey/sa/ajaxowneredit'); ?>';
-    var delmsg ='<?php $clang->eT("Are you sure you want to delete these surveys?",'js');?>';
-    var sCaption ='<?php $clang->eT("Surveys",'js');?>';
-    var sSelectColumns ='<?php $clang->eT("Select columns",'js');?>';
-    var sRecordText = '<?php $clang->eT("View {0} - {1} of {2}",'js');?>';
-    var sPageText = '<?php $clang->eT("Page {0} of {1}",'js');?>';
-    var sLoadText = '<?php $clang->eT("Loading...",'js');?>';
-    var sDelTitle = '<?php $clang->eT("Delete selected survey(s)",'js');?>';
-    var sDelCaption = '<?php $clang->eT("Delete",'js');?>';
-    var sSearchCaption = '<?php $clang->eT("Filter...",'js');?>';
-    var sOperator1= '<?php $clang->eT("equal",'js');?>';
-    var sOperator2= '<?php $clang->eT("not equal",'js');?>';
-    var sOperator3= '<?php $clang->eT("less",'js');?>';
-    var sOperator4= '<?php $clang->eT("less or equal",'js');?>';
-    var sOperator5= '<?php $clang->eT("greater",'js');?>';
-    var sOperator6= '<?php $clang->eT("greater or equal",'js');?>';
-    var sOperator7= '<?php $clang->eT("begins with",'js');?>';
-    var sOperator8= '<?php $clang->eT("does not begin with",'js');?>';
-    var sOperator9= '<?php $clang->eT("is in",'js');?>';
-    var sOperator10= '<?php $clang->eT("is not in",'js');?>';
-    var sOperator11= '<?php $clang->eT("ends with",'js');?>';
-    var sOperator12= '<?php $clang->eT("does not end with",'js');?>';
-    var sOperator13= '<?php $clang->eT("contains",'js');?>';
-    var sOperator14= '<?php $clang->eT("does not contain",'js');?>';
-    var sFind= '<?php $clang->eT("Filter",'js');?>';
-    var sReset= '<?php $clang->eT("Reset",'js');?>';
-    var sSelectColumns= '<?php $clang->eT("Select columns",'js');?>';                          
-    var sSubmit= '<?php $clang->eT("Save",'js');?>';
-    
-    var sCancel = '<?php $clang->eT("Cancel",'js');?>';
-    var sSearchTitle ='<?php $clang->eT("Filter surveys",'js');?>';
-    var sRefreshTitle ='<?php $clang->eT("Reload survey list",'js');?>';
-    var delBtnCaption ='<?php $clang->eT("Save",'js');?>';
-    var sEmptyRecords ='<?php $clang->eT("There are currently no surveys.",'js');?>';
-    var sConfirmationExpireMessage='<?php $clang->eT("Are you sure you want to expire these surveys?",'js');?>';
-    var sConfirmationArchiveMessage='<?php $clang->eT("This function creates a ZIP archive of several survey archives and can take some time - please be patient! Do you want to continue?",'js');?>';
-    var jsonUrl = "<?php echo Yii::app()->getController()->createUrl('admin/survey/sa/getSurveys_json'); ?>";
-    var editUrl = "<?php echo $this->createUrl('admin/survey/sa/editSurvey_json'); ?>";
-    var colNames = ["<?php $clang->eT("Status") ?>","<?php $clang->eT("SID") ?>","<?php $clang->eT("Survey") ?>","<?php $clang->eT("Date created") ?>","<?php $clang->eT("Owner") ?>","<?php $clang->eT("Access") ?>","<?php $clang->eT("Anonymized responses") ?>","<?php $clang->eT("Full") ?>","<?php $clang->eT("Partial") ?>","<?php $clang->eT("Total") ?>","<?php $clang->eT("Tokens available") ?>","<?php $clang->eT("Response rate") ?>"];
-    var colModels = [{ "name":"status", "index":"status", "width":15, "align":"center", "sorttype":"string", "sortable": true, "editable":false},
-    { "name":"sid", "index":"sid", "sorttype":"int", "sortable": true, "width":15, "align":"center", "editable":false},
-    { "name":"survey", "index":"survey", "sorttype":"string", "sortable": true, "width":100, "align":"left", "editable":true},
-    { "name":"date_created", "index":"date_created", "sorttype":"string", "sortable": true,"width":25, "align":"center", "editable":false},
-    { "name":"owner", "index":"owner","align":"center","width":40, "sorttype":"string", "sortable": true, "editable":true},
-    { "name":"access", "index":"access","align":"center","width":25,"sorttype":"string", "sortable": true, "editable":true, "edittype":"checkbox", "editoptions":{ "value":"Y:N"}},
-    { "name":"anonymous", "index":"anonymous","align":"center", "sorttype":"string", "sortable": true,"width":25,"editable":true, "edittype":"checkbox", "editoptions":{ "value":"Y:N"}},
-    { "name":"full", "index":"full","align":"center", "sorttype":"int", "sortable": true,"width":25,"editable":false},
-    { "name":"partial", "index":"partial","align":"center", "sorttype":"int", "sortable": true,"width":25,"editable":false},
-    { "name":"total", "index":"total","align":"center", "sorttype":"int", "sortable": true,"width":25,"editable":false},
-    { "name":"available", "index":"available","align":"center", "sorttype":"int", "sortable": true,"width":25,"editable":false},
-    { "name":"rate", "index":"rate","align":"center", "sorttype":"int", "sortable": true,"width":25,"editable":false}];
+<?php
+/**
+* This file render the list of surveys
+* It use the Survey model search method to build the data provider.
+*
+* @var $model  obj    the QuestionGroup model
+*/
+?>
+<?php $pageSize=Yii::app()->user->getState('pageSize',Yii::app()->params['defaultPageSize']);?>
+<div class="col-lg-12 list-surveys">
+    <h3><?php eT('Survey list'); ?></h3>
+
+    <!-- Search Box -->
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="form text-right">
+                <!-- Begin Form -->
+                <?php $form=$this->beginWidget('CActiveForm', array(
+                    'action' => Yii::app()->createUrl('admin/survey/sa/listsurveys/'),
+                    'method' => 'get',
+                    'htmlOptions'=>array(
+                        'class'=>'form-inline',
+                    ),
+                )); ?>
+
+                <!-- search input -->
+                <div class="form-group">
+                    <?php echo $form->label($model, 'search', array('label'=>gT('Search:'),'class'=>'control-label')); ?>
+                    <?php echo $form->textField($model, 'searched_value', array('class'=>'form-control')); ?>
+                </div>
+
+                <!-- select state -->
+                <div class="form-group">
+                    <?php echo $form->label($model, 'active', array('label'=>gT('Active:'),'class'=>'control-label')); ?>
+                    <select name="active" class="form-control">
+                        <option value="" <?php if( $model->active==""){echo "selected";}?>><?php eT('(Any state)');?></option>
+                        <option value="Y" <?php if( $model->active=="Y"){echo "selected";}?>><?php eT('Yes');?></option>
+                        <option value="N" <?php if( $model->active=="N"){echo "selected";}?>><?php eT('No');?></option>
+                        <option value="E" <?php if( $model->active=="E"){echo "selected";}?>><?php eT('Expired');?></option>
+                        <option value="S" <?php if( $model->active=="S"){echo "selected";}?>><?php eT('Not yet started');?></option>
+                    </select>
+                </div>
+                <?php echo CHtml::submitButton(gT('Search','unescaped'), array('class'=>'btn btn-success')); ?>
+                <a href="<?php echo Yii::app()->createUrl('admin/survey/sa/listsurveys');?>" class="btn btn-warning"><?php eT('Reset');?></a>
+
+                <?php $this->endWidget(); ?>
+            </div>
+        </div>
+    </div>
+
+    <!-- Grid -->
+    <div class="row">
+        <div class="col-lg-12 content-right">
+            <?php
+            $this->widget('bootstrap.widgets.TbGridView', array(
+                'dataProvider' => $model->search(),
+
+                // Number of row per page selection
+                'id' => 'survey-grid',
+                'emptyText'=>gT('No surveys found.'),
+                'summaryText'=>gT('Displaying {start}-{end} of {count} result(s).').' '. sprintf(gT('%s rows per page'),
+                    CHtml::dropDownList(
+                        'pageSize',
+                        $pageSize,
+                        Yii::app()->params['pageSizeOptions'],
+                        array('class'=>'changePageSize form-control', 'style'=>'display: inline; width: auto'))),
+
+                'columns' => array(
+                    array(
+                        'header' => gT('Survey ID'),
+                        'name' => 'survey_id',
+                        'value'=>'$data->sid',
+                        'headerHtmlOptions'=>array('class' => 'hidden-xs'),
+                        'htmlOptions' => array('class' => 'hidden-xs')
+                    ),
+
+                    array(
+                        'header' => gT('Active'),
+                        'name' => 'running',
+                        'value'=>'$data->running',
+                        'type'=>'raw',
+                        'headerHtmlOptions'=>array('class' => 'hidden-xs'),
+                        'htmlOptions' => array('class' => 'hidden-xs'),
+                    ),
+
+                    array(
+                        'header' => gT('Title'),
+                        'name' => 'title',
+                        'value'=>'$data->defaultlanguage->surveyls_title',
+                        'headerHtmlOptions'=>array('class' => 'col-md-4'),
+                        'htmlOptions' => array('class' => 'col-md-4'),
+                    ),
+
+                    array(
+                        'header' => gT('Created'),
+                        'name' => 'creation_date',
+                        'value'=>'$data->creationdate',
+                        'headerHtmlOptions'=>array('class' => 'hidden-xs'),
+                        'htmlOptions' => array('class' => 'hidden-xs'),
+                    ),
+
+                    array(
+                        'header' => gT('Owner'),
+                        'name' => 'owner',
+                        'value'=>'$data->owner->users_name',
+                        'headerHtmlOptions'=>array('class' => 'hidden-md hidden-sm hidden-xs'),
+                        'htmlOptions' => array('class' => 'hidden-md hidden-sm hidden-xs'),
+                    ),
+
+                    array(
+                        'header' => gT('Anonymized responses'),
+                        'name' => 'anonymized_responses',
+                        'value'=>'$data->anonymizedResponses',
+                        'headerHtmlOptions'=>array('class' => 'hidden-xs hidden-sm col-md-1'),
+                        'htmlOptions' => array('class' => 'hidden-xs hidden-sm col-md-1'),
+                    ),
+
+
+                    array(
+                        'header' => gT('Partial'),
+                        'name' => 'partial',
+                        'value'=>'$data->countPartialAnswers',
+                        'htmlOptions' => array('class' => ''),
+                    ),
+
+                    array(
+                        'header' => gT('Full'),
+                        'name' => 'full',
+                        'value'=>'$data->countFullAnswers',
+                        'htmlOptions' => array('class' => ''),
+                    ),
+
+                    array(
+                        'header' => gT('Total'),
+                        'name' => 'total',
+                        'value'=>'$data->countTotalAnswers',
+                        'htmlOptions' => array('class' => ''),
+                    ),
+
+                    array(
+                        'header' => gT('Uses tokens'),
+                        'name' => 'uses_tokens',
+                        'value'=>'$data->hasTokens',
+                        'htmlOptions' => array('class' => ''),
+                    ),
+
+                    array(
+                        'header' => '',
+                        'name' => 'actions',
+                        'value'=>'$data->buttons',
+                        'type'=>'raw',
+                        'htmlOptions' => array('class' => ''),
+                    ),
+
+                ),
+
+                'htmlOptions'=>array('style'=>'cursor: pointer;', 'class'=>'hoverAction'),
+                'selectionChanged'=>"function(id){window.location='" . Yii::app()->urlManager->createUrl('admin/survey/sa/view/surveyid' ) . '/' . "' + $.fn.yiiGridView.getSelection(id.split(',', 1));}",
+                'ajaxUpdate' => true,
+                'afterAjaxUpdate' => 'doToolTip'
+            ));
+            ?>
+        </div>
+    </div>
+</div>
+
+<!-- To update rows per page via ajax -->
+<script type="text/javascript">
+    jQuery(function($) {
+        jQuery(document).on("change", '#pageSize', function(){
+            $.fn.yiiGridView.update('survey-grid',{ data:{ pageSize: $(this).val() }});
+        });
+    });
 </script>
-<br/>
-<table id="displaysurveys"></table> <div id="pager"></div>
-<select id='gs_status_select' style='display: none'>
-    <option value=''><?php $clang->eT("Any") ?></option>
-    <option value='--a--'><?php $clang->eT("Expired") ?></option>
-    <option value='--e--'><?php $clang->eT("Inactive") ?></option>
-    <option value='--c--'><?php $clang->eT("Active") ?></option>
-</select>
-<select id='gs_access_select' style='display: none'>
-    <option value=''><?php $clang->eT("Any") ?></option>
-    <option value='Open'><?php $clang->eT("Open") ?></option>
-    <option value='Closed'><?php $clang->eT("Closed") ?></option>
-</select>
-<br />

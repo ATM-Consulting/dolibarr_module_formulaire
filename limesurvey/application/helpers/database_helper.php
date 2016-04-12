@@ -11,11 +11,10 @@ if ( !defined('BASEPATH')) exit('No direct script access allowed');
 * other free or open source software licenses.
 * See COPYRIGHT.php for copyright notices and details.
 *
-*	$Id$
 */
 
 /**
- * 
+ *
  * @param type $sql
  * @param type $inputarr
  * @param type $silent
@@ -41,7 +40,8 @@ function dbExecuteAssoc($sql,$inputarr=false,$silent=true)
 
     if (!$dataset && (Yii::app()->getConfig('debug') >0 || !$silent))
     {
-        safeDie('Error executing query in dbExecuteAssoc:'.$error);
+        // Exception is better than safeDie, because you can see the backtrace.
+        throw new \Exception('Error executing query in dbExecuteAssoc:'.$error);
     }
     return $dataset;
 }
@@ -103,6 +103,7 @@ function dbQuoteID($id)
         case "mysql" :
             return "`".$id."`";
             break;
+        case "dblib":
         case "mssql" :
         case "sqlsrv" :
             return "[".$id."]";
@@ -131,6 +132,7 @@ function dbRandom()
 
     switch ($driver)
     {
+        case 'dblib':
         case 'mssql':
         case 'sqlsrv':
             $srandom='NEWID()';
@@ -168,6 +170,7 @@ function dbSelectTablesLike($table)
         case 'mysqli':
         case 'mysql' :
             return "SHOW TABLES LIKE '$table'";
+        case 'dblib' :
         case 'mssql' :
         case 'sqlsrv' :
             return "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES where TABLE_TYPE='BASE TABLE' and TABLE_NAME LIKE '$table' ESCAPE '\'";
@@ -186,38 +189,4 @@ function dbSelectTablesLike($table)
 function dbGetTablesLike($table)
 {
     return (array) Yii::app()->db->createCommand(dbSelectTablesLike("{{{$table}}}"))->queryColumn();
-}
-
-/**
-* Creates a table using the YII DB Schema function but properly handles custom field types for the various DB types
-*
-* @param mixed $sTableName
-* @param mixed $aColumns
-* @param mixed $sOptions
-*/
-function createTable($sTableName, $aColumns, $sOptions=null)
-{
-    $sDBDriverName=Yii::app()->db->getDriverName();
-
-    if ($sDBDriverName=='sqlsrv' || $sDBDriverName=='mssql')
-    {
-        foreach ($aColumns as $sName=>&$sType)
-        {
-            $sType=str_replace('text','varchar(max)',$sType);
-            $sType=str_replace('binary','text',$sType);
-        }
-    }
-    if ($sDBDriverName=='pgsql')
-    {
-        foreach ($aColumns as $sName=>&$sType)
-        {
-            $sType=str_replace('varchar','character varying',$sType);
-        }
-    }
-    if (Yii::app()->db->driverName == 'mysql' || Yii::app()->db->driverName == 'mysqli')
-    {
-        if (is_null($sOptions))
-        $sOptions='ENGINE=MyISAM';
-    }    
-    Yii::app()->db->createCommand()->createTable($sTableName,$aColumns,$sOptions);
 }

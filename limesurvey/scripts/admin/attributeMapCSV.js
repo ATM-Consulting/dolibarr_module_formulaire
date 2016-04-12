@@ -2,142 +2,215 @@ $(document).ready(function() {
     if(!$('#csvattribute').length ) {
         //alert("All the attributes are automatically mapped");
     }
-    var height = $(document).height();
-    var width = $(document).width();
-    var cpdbattarray = {};
-    var newcurrentarray = {};
-    $('#centralattribute').css({'height' : height-200});
-    $('#csvattribute').css({'height' : height-200});
-    $('#newcreated').css({'height' : height-200});
-    if($("#overwrite").is(':checked')) {var attoverwrite=true;} else {var attoverwrite=false;}
+    
+    // Find the biggest column and set both to that height
+    function adjustHeights() {
+
+        var max = Math.max($('.droppable-new').height(), $('.droppable-csv').height());
+        console.log('max', max);
+
+        $('.droppable-new').css('min-height', max);
+        $('.droppable-csv').css('min-height', max);
+    }
+    
+    adjustHeights();    
+    
+    if($("#overwrite").is(':checked')) {
+        var attoverwrite=true;
+    } 
+    else {
+        var attoverwrite=false;
+    }
+                
+    // Make the items draggable
+    $('.draggable').draggable({ 
+        revert: 'invalid',
+        appendTo: 'body',
+        zIndex: 150,
+        containment: $('.draggable-container'),
+        opacity: 0.75
+    });
+            
+    // Set the targets for the draggables
+    // Droppable into first and second column
+    $('.droppable-csv, .droppable-new').droppable({ 
+        hoverClass: 'target-hover', 
+        accept: '.draggable',
+        drop: function(event, ui) {
+                
+            // Physically  move the draggable to the target (the plugin just visually moves it)
+            // Need to use a clone for this to fake out iPad
+            var newDraggable = $(ui.draggable).clone();
+            $(newDraggable).appendTo(this);
+            $(ui.draggable).remove();
+            
+            // Clean up the new clone
+            $(newDraggable).removeClass('ui-draggable-dragging').css({
+                'left':'0',
+                'z-index': '',
+                'opacity': 1
+            }).animate({
+                top: ''
+            }, 300).draggable({ 
+                revert: "invalid",
+                zIndex: 150,
+                appendTo: "body",
+                containment: $('.draggable-container'),
+                opacity: 0.75
+            });
+                        
+            // Remove the text input if dropped out of the new attributes column
+            if(!$(this).hasClass('newcreate') && $('input[type="text"]', newDraggable).length > 0) { 
+                $('input[type="text"]', newDraggable).remove();
+                $(newDraggable).text($(newDraggable).attr('data-name'));
+            }        
+
+            // Dropped in new attributes
+            if($(this).hasClass('newcreate')) { 
+                newDraggable.html(newDraggable.attr('id').replace('cs_',''));
+                var id = newDraggable.attr('id').replace(/ /g, '');
+                var name = newDraggable.attr('data-name');
+                newDraggable.prepend('<input type="text" id="td_' + id + '" value="' + name + '">');
+            }  
+                        
+            // Reset the mappable attribute classes 
+            $('.mappable-attribute-wrapper').removeClass('paired');
+            $('.mappable-attribute-wrapper .csv-attribute').closest('.mappable-attribute-wrapper').addClass('paired');
+            $('.mappable-attribute-wrapper').droppable('enable');
+            $('.mappable-attribute-wrapper.paired').droppable('disable');
+            
+            adjustHeights();
+        } 
+    });
+
+    // The area to map CSV attributes to existent participant attributes
+    $('.droppable-map').droppable({
+        hoverClass: 'target-hover', 
+        accept: '.draggable',
+        drop: function(event, ui) {
+
+            // Insert nice arrow
+            $(this).find('.col-sm-6:first-child').append('<span class="fa fa-arrows-h csvatt-arrow"></span>');
+
+            // Physically  move the draggable to the target (the plugin just visually moves it)
+            // Need to use a clone for this to fake out iPad
+            var newDraggable = $(ui.draggable).clone();
+            newDraggable.appendTo(this);
+            $(ui.draggable).remove();
+
+            // Don't allow user to drop more attributes here
+            $(this).droppable('disable');
+
+            // Fix CSS
+            newDraggable.removeClass('ui-draggable-dragging').css({
+                'left': '0',
+                'top': '0',
+                'z-index': '',
+                'opacity': 1
+            });
+
+            // Remove the text input if dropped out of the new attributes column
+            if(!$(this).hasClass('newcreate') && $('input[type="text"]', newDraggable).length > 0) { 
+                $('input[type="text"]', newDraggable).remove();
+                $(newDraggable).text($(newDraggable).attr('data-name'));
+            }        
+
+            newDraggable.wrap("<div class='col-sm-6'></div>");
+
+            adjustHeights();
+        }
+    });
+    
+
+    $('#attmapcancel').click(function(){
+        $.post(mapCSVcancelled, {fullfilepath : thefilepath},
+        function(data){
+            $(location).attr('href',displayParticipants);
+        });
+    });
+    
     $("#overwrite").click(function(){
-        if($("#overwrite").is(':checked')) {attoverwrite=true;} else {attoverwrite=false;}
-    });
-    //The original fieldnames bucket
-    $(".csvatt").sortable({
-        connectWith:".cpdbatt,.newcreate",
-        helper: "clone",
-        appendTo: "ul",
-        receive: function(event,ui) {
-            newcurrentarray = $(this).sortable('toArray');
-            var csvattpos = jQuery.inArray($(ui.item).attr('id'),newcurrentarray)
-            csvattpos = csvattpos+1;
-            $('ul.csvatt > li:nth-child('+csvattpos+')').css("color", "black");
-            $('ul.csvatt > li:nth-child('+csvattpos+')').css("background-color","white");
-            $('ul.csvatt > li:nth-child('+csvattpos+')').css("margin-top","3px");
-            $('ul.csvatt > li:nth-child('+csvattpos+')').css("border-top","2px solid #ddd");
-
-        }
-    });
-    //The 'create new' bucket
-    $(".newcreate").sortable({
-        helper: "clone",
-        connectWith:".cpdbatt,.csvatt"
-    });
-    //The existing attributes bucket
-    $("ul.cpdbatt").sortable({
-        helper: "clone",
-        appendTo: "body",
-        connectWith: "ul.cpdbatt,.csvatt,.newcreate",
-
-        receive: function(event,ui) {
-            cpdbattarray = $(this).sortable('toArray');
-            var cpdbattpos = jQuery.inArray($(ui.item).attr('id'),cpdbattarray);
-            var csvpos = cpdbattpos+1;
-            var cpdbattid = cpdbattarray[cpdbattpos-1];
-            var csvattid = $(ui.item).attr('id');
-            if(cpdbattpos == 0 ) {
-                alert(notPairedErrorTxt);
-                $(ui.sender).sortable('cancel');
-            } else if($("#"+cpdbattid).css('color') == 'white') {
-                alert(onlyOnePairedErrorTxt);
-                $(ui.sender).sortable('cancel');
-            } else {
-	            $('ul.cpdbatt > li:nth-child('+cpdbattpos+')').css("color","white");
-                $('ul.cpdbatt > li:nth-child('+cpdbattpos+')').css("border-bottom","0");
-                $('ul.cpdbatt > li:nth-child('+csvpos+')').css("color","white");
-	            $('ul.cpdbatt > li:nth-child('+csvpos+')').css("margin-top","-5px");
-                $('ul.cpdbatt > li:nth-child('+csvpos+')').css("border-top","0");
-                $('ul.cpdbatt > li:nth-child('+csvpos+')').css("min-height","20px");
-                $('ul.cpdbatt > li:nth-child('+csvpos+')').css("background-color","#328639");
-                $("#"+cpdbattid).css("background-color","#328639");
-       	    }
-        },
-        remove: function(event,ui) {
-            /* TODO: Find out how to change the colour of the li item above the moved item back to white */
+        if($("#overwrite").is(':checked')) {
+            attoverwrite=true;
+        } 
+        else {
+            attoverwrite=false;
         }
     });
 
-    $("ul.newcreate").sortable({
-	    helper: 'clone',
-	    appendTo: 'body',
-	    dropOnEmpty: true,
-	    receive: function(event,ui) {
-	        if($(ui.item).attr('id')[0]=='t') {
-	            alert(cannotAcceptErrorTxt);
-	            $(ui.sender).sortable('cancel');
-	        }
-	        newcurrentarray = $(this).sortable('toArray');
-	        var cpdbattpos = jQuery.inArray($(ui.item).attr('id'),newcurrentarray)
-	        cpdbattpos = cpdbattpos+1;
-	        $('ul.newcreate > li:nth-child('+cpdbattpos+')').css("color", "white");
-	        $('ul.newcreate > li:nth-child('+cpdbattpos+')').css("background-color","#328639");
-	    }
-	});
+    // Click Move all fields to created column (mid column)
+    $('#move-all').click(function () {
+        $('.droppable-csv .csv-attribute-item').each(function(i, elem) {
+            var $elem = $(elem);
+            $elem.html($elem.attr('id').replace('cs_',''));
+            var id = $elem.attr('id').replace(/ /g, '');
+            var name = $elem.attr('data-name');
+            $elem.prepend('<input type="text" id="td_' + id + '" value="' + name + '">');
+            $elem.detach().appendTo('.newcreate');
+            adjustHeights();
+        });
+    });
 
-	$('#attmapcancel').click(function(){
-	    $.post(mapCSVcancelled, {fullfilepath : thefilepath},
-	    function(data){
-	        $(location).attr('href',displayParticipants);
-	    });
-	});
+    // Click Continue
+    $('#attmap').click(function(){
+        var anewcurrentarray = {};
+        var newcurrentarray = [];
+        $('#newcreated .csv-attribute-item').each(function(i) {
+            newcurrentarray.push($(this).attr('id'));
+        });
+        $.each(newcurrentarray, function(index,value) {
+			if(value[0]=='c') {
+                var id = value.replace(/ /g, '');
+                anewcurrentarray[value.substring(3)] = $("#td_" + id).val();
+            }
+        });
+        
+        var mappedarray = {};
+        cpdbattarray = new Array();
+        $('#centralattribute .csv-attribute-item').each(function(i) {
+            cpdbattarray.push($(this).attr('id'));
+        });
 
-	$('#attmap').click(function(){
-	    var mappedarray = {};
-	    $.each(cpdbattarray, function(index,value) {
-	        if(value[0]=='c' && value[1]=='s') {
-	            mappedarray[cpdbattarray[index-1].substring(2)] = value.substring(3);
-	        }
-		});
+        $.each(cpdbattarray, function(index,value) {
+            if(value[0]=='c' && value[1]=='s') {
+                mappedarray[cpdbattarray[index-1].substring(2)] = value.substring(3);
+            }
+        });
 
-		$.each(newcurrentarray, function(index,value) {
-		    newcurrentarray[index] = value.substring(3);
-		});
+        var dialog_buttons={};
 
-		var dialog_buttons={};
+        dialog_buttons[okBtn]=function(){
+            $(location).attr('href',displayParticipants);
+        };
 
-		dialog_buttons[okBtn]=function(){
-		    $(location).attr('href',displayParticipants);
-		};
+        $("#processing").dialog({
+            height: 550,
+            width: 700,
+            modal: true,
+            buttons: dialog_buttons,
+            open: function(event, ui) {
+                $('#processing').parent().find("button").each(function() {
+                    if ($(this).text() == okBtn) {
+                        $(this).attr('disabled', true);
+                    }
+                });
+            }
+        });
 
-		$("#processing").dialog({
-			height: 550,
-		    width: 700,
-		    modal: true,
-		    buttons: dialog_buttons,
-		    open: function(event, ui) {
-		        $('#processing').parent().find("button").each(function() {
-		            if ($(this).text() == okBtn) {
-		                $(this).attr('disabled', true);
-		            }
-		        });
-		    }
-		});
-
-		$("#processing").load(copyUrl, {
-		    characterset: characterset,
-		    seperatorused : seperator,
-		    fullfilepath : thefilepath,
-		    newarray : newcurrentarray,
-		    mappedarray : mappedarray,
+        $("#processing").load(copyUrl, {
+            characterset: characterset,
+            separatorused : separator,
+            fullfilepath : thefilepath,
+            newarray : anewcurrentarray,
+            mappedarray : mappedarray,
             overwrite : attoverwrite,
             filterbea : filterblankemails
-		}, function(msg){
-		    $('#processing').parent().find("button").each(function() {
-		        if ($(this).text() == okBtn) {
-		            $(this).attr('disabled', false);
-		        }
-		    });
-	    });
-	});
+        }, function(msg){
+            $('#processing').parent().find("button").each(function() {
+                if ($(this).text() == okBtn) {
+                    $(this).attr('disabled', false);
+                }
+            });
+        });
+    });
 });

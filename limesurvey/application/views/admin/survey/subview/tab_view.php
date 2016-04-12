@@ -4,28 +4,76 @@
     var sParameter = '';
     var sTargetQuestion = '';
     var sNoParametersDefined = '';
-    var sAdminEmailAddressNeeded = '<?php $clang->eT("If you are using token functions or notifications emails you need to set an administrator email address.",'js'); ?>' 
+    var sAdminEmailAddressNeeded = '<?php  eT("If you are using token functions or notifications emails you need to set an administrator email address.",'js'); ?>' 
     var sURLParameters = '';
     var sAddParam = '';
 </script>
-<div id='tabs'>
-    <ul>
-        <li><a href='#general'><?php $clang->eT("General"); ?></a></li>
-        <li><a href='#presentation'><?php $clang->eT("Presentation & navigation"); ?></a></li>
-        <li><a href='#publication'><?php $clang->eT("Publication & access control"); ?></a></li>
-        <li><a href='#notification'><?php $clang->eT("Notification & data management"); ?></a></li>
-        <li><a href='#tokens'><?php $clang->eT("Tokens"); ?></a></li>
-        <?php if ($action == "newsurvey") { ?>
-        <li><a href='#import'><?php $clang->eT("Import"); ?></a></li>
-        <li><a href='#copy'><?php $clang->eT("Copy"); ?></a></li>
-        <?php }
-        elseif ($action == "editsurveysettings") { ?>
-        <li><a href='#panelintegration'><?php $clang->eT("Panel integration"); ?></a></li>
-        <li><a href='#resources'><?php $clang->eT("Resources"); ?></a></li>
-        <?php } ?>
-    </ul>
-    <?php
-        if ($action == "editsurveysettings") $sURL="admin/database/index/updatesurveysettings";
-        else $sURL="admin/survey/sa/insert";
-    ?>
-    <?php echo CHtml::form(array($sURL), 'post', array('id'=>'addnewsurvey', 'name'=>'addnewsurvey', 'class'=>'form30')); ?>
+
+
+<ul class="nav nav-tabs" id="edit-survey-text-element-language-selection">
+	<li role="presentation" class="active">
+		<a data-toggle="tab" href='#general'>
+			<?php  eT("General"); ?>
+		</a>
+	</li>
+
+	<li role="presentation">
+		<a data-toggle="tab" href="#presentation">
+			<?php  eT("Presentation & navigation"); ?>
+		</a>
+	</li>
+
+	<li role="presentation">
+		<a data-toggle="tab" href="#publication">
+			<?php  eT("Publication & access control"); ?>
+		</a>
+	</li>
+
+	<li role="presentation">
+		<a data-toggle="tab" href="#notification">
+			<?php  eT("Notification & data management"); ?>
+		</a>
+	</li>	
+
+	<li role="presentation">
+		<a data-toggle="tab" href="#tokens">
+			<?php  eT("Tokens"); ?>
+		</a>
+	</li>
+
+	<?php if ($action == "newsurvey"): ?>
+		<li role="presentation">
+			<a data-toggle="tab" href="#import">
+				<?php  eT("Import"); ?>
+			</a>
+		</li>
+		
+		<li role="presentation">
+			<a data-toggle="tab" href="#copy">
+				<?php  eT("Copy"); ?>
+			</a>
+		</li>
+	<?php elseif($action == "editsurveysettings"): ?>
+		<li role="presentation">
+			<a data-toggle="tab" href="#panelintegration">
+				<?php  eT("Panel integration"); ?>
+			</a>
+		</li>
+		<li role="presentation">
+			<a data-toggle="tab" href="#resources">
+				<?php  eT("Resources"); ?>
+			</a>
+		</li>
+		<?php if(isset($pluginSettings)): ?>
+			<li role="presentation">
+				<a data-toggle="tab" href="#pluginsettings">
+					<?php  eT("Plugins"); ?>
+				</a>
+			</li>			
+		<?php endif;?>		
+	<?php endif; ?>			
+	<li role="presentation">
+		<a data-toggle="tab" href="#">
+		</a>
+	</li>	
+</ul>	

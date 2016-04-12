@@ -1,7 +1,7 @@
 <?php
 /*
  * LimeSurvey
- * Copyright (C) 2007 The LimeSurvey Project Team / Carsten Schmitz
+ * Copyright (C) 2013 The LimeSurvey Project Team / Carsten Schmitz
  * All rights reserved.
  * License: GNU/GPL License v2 or later, see LICENSE.php
  * LimeSurvey is free software. This version may have been modified pursuant
@@ -10,42 +10,25 @@
  * other free or open source software licenses.
  * See COPYRIGHT.php for copyright notices and details.
  *
- * $Id$
- */
+  */
 class limereplacementfields extends Survey_Common_Action
 {
 
     public function index()
     {
-        if (isset($_GET['surveyid'])) {
-            $surveyid = sanitize_int($_GET['surveyid']);
+        $surveyid = intval(App()->request->getQuery('surveyid'));
+        $gid = intval(App()->request->getQuery('gid'));
+        $qid = intval(App()->request->getQuery('qid'));
+        $fieldtype = sanitize_xss_string(App()->request->getQuery('fieldtype'));
+        $action = sanitize_xss_string(App()->request->getQuery('action'));
+        if (!Yii::app()->session['loginID'])
+        {
+            throw new CHttpException(401);
         }
-        if (isset($_GET['gid'])) {
-            $gid = sanitize_int($_GET['gid']);
-        }
-        if (isset($_GET['qid'])) {
-            $qid = sanitize_int($_GET['qid']);
-        }
-        if (isset($_GET['fieldtype'])) {
-            $fieldtype = $_GET['fieldtype'];
-        }
-        if (isset($_GET['action'])) {
-            $action = $_GET['action'];
-        }
-
-        $clang = Yii::app()->lang;
-
-        if (!Yii::app()->session['loginID']) {
-            die ("Unauthenticated Access Forbiden");
-        }
-
         list($replacementFields, $isInstertAnswerEnabled) = $this->_getReplacementFields($fieldtype, $surveyid);
 
-        if ($isInstertAnswerEnabled === true) {
-            if (empty($surveyid)) {
-                safeDie("No SID provided.");
-            }
-
+        if ($isInstertAnswerEnabled === true)
+        {
             //2: Get all other questions that occur before this question that are pre-determined answer types
             $fieldmap = createFieldMap($surveyid,'full',false,false,getBaseLanguageFromSurveyID($surveyid));
 
@@ -60,7 +43,6 @@ class limereplacementfields extends Survey_Common_Action
 
         $data['countfields'] = count($replacementFields);
         $data['replFields'] = $replacementFields;
-        $data['clang'] = $clang;
         if (isset($childQuestions)) {
             $data['cquestions'] = $childQuestions;
         }
@@ -79,11 +61,13 @@ class limereplacementfields extends Survey_Common_Action
 
         foreach ($fieldmap as $question)
         {
-            if (empty($question['qid'])) {
+            if (empty($question['qid']))
+            {
                 continue;
             }
 
-            if (is_null($qid) || $this->_shouldAddQuestion($action, $gid, $qid, $question, $previousQuestion)) {
+            if (is_null($qid) || $this->_shouldAddQuestion($action, $gid, $qid, $question, $previousQuestion))
+            {
                 $isPreviousPageQuestion = $this->_addQuestionToList($action, $gid, $question, $questionType, $surveyformat, $isPreviousPageQuestion, $questionList);
                 $previousQuestion = $question;
             }
@@ -197,9 +181,10 @@ class limereplacementfields extends Survey_Common_Action
 
     private function _getReplacementFields($fieldtype, $surveyid)
     {
-        $clang = Yii::app()->lang;
-        $replFields = array();
 
+        $replFields = array();
+        if(!$surveyid)
+            return array($replFields, false);
         switch ($fieldtype)
         {
             case 'survey-desc':
@@ -209,95 +194,98 @@ class limereplacementfields extends Survey_Common_Action
             case 'editdescription': // for translation
             case 'editwelcome': // for translation
             case 'editend': // for translation
-                $replFields[] = array('TOKEN:FIRSTNAME', $clang->gT("Firstname from token"));
-                $replFields[] = array('TOKEN:LASTNAME', $clang->gT("Lastname from token"));
-                $replFields[] = array('TOKEN:EMAIL', $clang->gT("Email from the token"));
+                $replFields[] = array('TOKEN:FIRSTNAME', gT("First name from token"));
+                $replFields[] = array('TOKEN:LASTNAME', gT("Last name from token"));
+                $replFields[] = array('TOKEN:EMAIL', gT("Email from the token"));
                 $attributes = getTokenFieldsAndNames($surveyid, true);
                 foreach ($attributes as $attributefield => $attributedescription)
                 {
-                    $replFields[] = array('TOKEN:' . strtoupper($attributefield), sprintf($clang->gT("Token attribute: %s"), $attributedescription['description']));
+                    $replFields[] = array('TOKEN:' . strtoupper($attributefield), sprintf(gT("Token attribute: %s"), $attributedescription['description']));
                 }
-                $replFields[] = array('EXPIRY', $clang->gT("Survey expiration date"));
+                $replFields[] = array('EXPIRY', gT("Survey expiration date"));
+                $replFields[] = array('ADMINNAME', gT("Name of the survey administrator"));
+                $replFields[] = array('ADMINEMAIL', gT("Email address of the survey administrator"));
                 return array($replFields, false);
 
-            case 'email-admin-notification':
-                $replFields[] = array('RELOADURL', $clang->gT("Reload URL"));
-                $replFields[] = array('VIEWRESPONSEURL', $clang->gT("View response URL"));
-                $replFields[] = array('EDITRESPONSEURL', $clang->gT("Edit response URL"));
-                $replFields[] = array('STATISTICSURL', $clang->gT("Statistics URL"));
-                $replFields[] = array('TOKEN', $clang->gT("Token code for this participant"));
-                $replFields[] = array('TOKEN:FIRSTNAME', $clang->gT("First name from token"));
-                $replFields[] = array('TOKEN:LASTNAME', $clang->gT("Last name from token"));
-                $replFields[] = array('SURVEYNAME', $clang->gT("Name of the survey"));
-                $replFields[] = array('SURVEYDESCRIPTION', $clang->gT("Description of the survey"));
+            case 'email-admin_notification':
+            case 'email-admin_detailed_notification':
+                $replFields[] = array('RELOADURL', gT("Reload URL"));
+                $replFields[] = array('VIEWRESPONSEURL', gT("View response URL"));
+                $replFields[] = array('EDITRESPONSEURL', gT("Edit response URL"));
+                $replFields[] = array('STATISTICSURL', gT("Statistics URL"));
+                $replFields[] = array('TOKEN', gT("Token code for this participant"));
+                $replFields[] = array('TOKEN:FIRSTNAME', gT("First name from token"));
+                $replFields[] = array('TOKEN:LASTNAME', gT("Last name from token"));
+                $replFields[] = array('SURVEYNAME', gT("Name of the survey"));
+                $replFields[] = array('SURVEYDESCRIPTION', gT("Description of the survey"));
                 $attributes = getTokenFieldsAndNames($surveyid, true);
                 foreach ($attributes as $attributefield => $attributedescription)
                 {
-                    $replFields[] = array(strtoupper($attributefield), sprintf($clang->gT("Token attribute: %s"), $attributedescription['description']));
+                    $replFields[] = array(strtoupper($attributefield), sprintf(gT("Token attribute: %s"), $attributedescription['description']));
                 }
-                $replFields[] = array('ADMINNAME', $clang->gT("Name of the survey administrator"));
-                $replFields[] = array('ADMINEMAIL', $clang->gT("Email address of the survey administrator"));
+                $replFields[] = array('ADMINNAME', gT("Name of the survey administrator"));
+                $replFields[] = array('ADMINEMAIL', gT("Email address of the survey administrator"));
                 return array($replFields, false);
 
             case 'email-admin-resp':
-                $replFields[] = array('RELOADURL', $clang->gT("Reload URL"));
-                $replFields[] = array('VIEWRESPONSEURL', $clang->gT("View response URL"));
-                $replFields[] = array('EDITRESPONSEURL', $clang->gT("Edit response URL"));
-                $replFields[] = array('STATISTICSURL', $clang->gT("Statistics URL"));
-                $replFields[] = array('ANSWERTABLE', $clang->gT("Answers from this response"));
-                $replFields[] = array('TOKEN', $clang->gT("Token code for this participant"));
-                $replFields[] = array('TOKEN:FIRSTNAME', $clang->gT("First name from token"));
-                $replFields[] = array('TOKEN:LASTNAME', $clang->gT("Last name from token"));
-                $replFields[] = array('SURVEYNAME', $clang->gT("Name of the survey"));
-                $replFields[] = array('SURVEYDESCRIPTION', $clang->gT("Description of the survey"));
+                $replFields[] = array('RELOADURL', gT("Reload URL"));
+                $replFields[] = array('VIEWRESPONSEURL', gT("View response URL"));
+                $replFields[] = array('EDITRESPONSEURL', gT("Edit response URL"));
+                $replFields[] = array('STATISTICSURL', gT("Statistics URL"));
+                $replFields[] = array('ANSWERTABLE', gT("Answers from this response"));
+                $replFields[] = array('TOKEN', gT("Token code for this participant"));
+                $replFields[] = array('TOKEN:FIRSTNAME', gT("First name from token"));
+                $replFields[] = array('TOKEN:LASTNAME', gT("Last name from token"));
+                $replFields[] = array('SURVEYNAME', gT("Name of the survey"));
+                $replFields[] = array('SURVEYDESCRIPTION', gT("Description of the survey"));
                 $attributes = getTokenFieldsAndNames($surveyid, true);
                 foreach ($attributes as $attributefield => $attributedescription)
                 {
-                    $replFields[] = array(strtoupper($attributefield), sprintf($clang->gT("Token attribute: %s"), $attributedescription['description']));
+                    $replFields[] = array(strtoupper($attributefield), sprintf(gT("Token attribute: %s"), $attributedescription['description']));
                 }
-                $replFields[] = array('ADMINNAME', $clang->gT("Name of the survey administrator"));
-                $replFields[] = array('ADMINEMAIL', $clang->gT("Email address of the survey administrator"));
+                $replFields[] = array('ADMINNAME', gT("Name of the survey administrator"));
+                $replFields[] = array('ADMINEMAIL', gT("Email address of the survey administrator"));
                 return array($replFields, false);
 
-            case 'email-inv':
-            case 'email-rem':
+            case 'email-invitation':
+            case 'email-reminder':
                 // these 2 fields are supported by email-inv and email-rem
                 // but not email-reg for the moment
-                $replFields[] = array('EMAIL', $clang->gT("Email from the token"));
-                $replFields[] = array('TOKEN', $clang->gT("Token code for this participant"));
-                $replFields[] = array('OPTOUTURL', $clang->gT("URL for a respondent to opt-out this survey"));
-                $replFields[] = array('OPTINURL', $clang->gT("URL for a respondent to opt-in this survey"));
-            case 'email-reg':
-                $replFields[] = array('FIRSTNAME', $clang->gT("Firstname from token"));
-                $replFields[] = array('LASTNAME', $clang->gT("Lastname from token"));
-                $replFields[] = array('SURVEYNAME', $clang->gT("Name of the survey"));
-                $replFields[] = array('SURVEYDESCRIPTION', $clang->gT("Description of the survey"));
+                $replFields[] = array('EMAIL', gT("Email from the token"));
+                $replFields[] = array('TOKEN', gT("Token code for this participant"));
+                $replFields[] = array('OPTOUTURL', gT("URL for a respondent to opt-out of this survey"));
+                $replFields[] = array('OPTINURL', gT("URL for a respondent to opt-in to this survey"));
+            case 'email-registration':
+                $replFields[] = array('FIRSTNAME', gT("First name from token"));
+                $replFields[] = array('LASTNAME', gT("Last name from token"));
+                $replFields[] = array('SURVEYNAME', gT("Name of the survey"));
+                $replFields[] = array('SURVEYDESCRIPTION', gT("Description of the survey"));
                 $attributes = getTokenFieldsAndNames($surveyid, true);
                 foreach ($attributes as $attributefield => $attributedescription)
                 {
-                    $replFields[] = array(strtoupper($attributefield), sprintf($clang->gT("Token attribute: %s"), $attributedescription['description']));
+                    $replFields[] = array(strtoupper($attributefield), sprintf(gT("Token attribute: %s"), $attributedescription['description']));
                 }
-                $replFields[] = array('ADMINNAME', $clang->gT("Name of the survey administrator"));
-                $replFields[] = array('ADMINEMAIL', $clang->gT("Email address of the survey administrator"));
-                $replFields[] = array('SURVEYURL', $clang->gT("URL of the survey"));
-                $replFields[] = array('EXPIRY', $clang->gT("Survey expiration date"));
+                $replFields[] = array('ADMINNAME', gT("Name of the survey administrator"));
+                $replFields[] = array('ADMINEMAIL', gT("Email address of the survey administrator"));
+                $replFields[] = array('SURVEYURL', gT("URL of the survey"));
+                $replFields[] = array('EXPIRY', gT("Survey expiration date"));
                 return array($replFields, false);
 
-            case 'email-conf':
-                $replFields[] = array('TOKEN', $clang->gT("Token code for this participant"));
-                $replFields[] = array('FIRSTNAME', $clang->gT("Firstname from token"));
-                $replFields[] = array('LASTNAME', $clang->gT("Lastname from token"));
-                $replFields[] = array('SURVEYNAME', $clang->gT("Name of the survey"));
-                $replFields[] = array('SURVEYDESCRIPTION', $clang->gT("Description of the survey"));
+            case 'email-confirmation':
+                $replFields[] = array('TOKEN', gT("Token code for this participant"));
+                $replFields[] = array('FIRSTNAME', gT("First name from token"));
+                $replFields[] = array('LASTNAME', gT("Last name from token"));
+                $replFields[] = array('SURVEYNAME', gT("Name of the survey"));
+                $replFields[] = array('SURVEYDESCRIPTION', gT("Description of the survey"));
                 $attributes = getTokenFieldsAndNames($surveyid, true);
                 foreach ($attributes as $attributefield => $attributedescription)
                 {
-                    $replFields[] = array(strtoupper($attributefield), sprintf($clang->gT("Token attribute: %s"), $attributedescription['description']));
+                    $replFields[] = array(strtoupper($attributefield), sprintf(gT("Token attribute: %s"), $attributedescription['description']));
                 }
-                $replFields[] = array('ADMINNAME', $clang->gT("Name of the survey administrator"));
-                $replFields[] = array('ADMINEMAIL', $clang->gT("Email address of the survey administrator"));
-                $replFields[] = array('SURVEYURL', $clang->gT("URL of the survey"));
-                $replFields[] = array('EXPIRY', $clang->gT("Survey expiration date"));
+                $replFields[] = array('ADMINNAME', gT("Name of the survey administrator"));
+                $replFields[] = array('ADMINEMAIL', gT("Email address of the survey administrator"));
+                $replFields[] = array('SURVEYURL', gT("URL of the survey"));
+                $replFields[] = array('EXPIRY', gT("Survey expiration date"));
 
                 // email-conf can accept insertans fields for non anonymous surveys
                 if (isset($surveyid)) {
@@ -315,25 +303,25 @@ class limereplacementfields extends Survey_Common_Action
             case 'editgroup_desc': // for translation
             case 'editquestion': // for translation
             case 'editquestion_help': // for translation
-                $replFields[] = array('TOKEN:FIRSTNAME', $clang->gT("Firstname from token"));
-                $replFields[] = array('TOKEN:LASTNAME', $clang->gT("Lastname from token"));
-                $replFields[] = array('TOKEN:EMAIL', $clang->gT("Email from the token"));
-                $replFields[] = array('SID', $clang->gT("This question's survey ID number"));
-                $replFields[] = array('GID', $clang->gT("This question's group ID number"));
-                $replFields[] = array('QID', $clang->gT("This question's question ID number"));
-                $replFields[] = array('SGQ', $clang->gT("This question's SGQA code"));
+                $replFields[] = array('TOKEN:FIRSTNAME', gT("First name from token"));
+                $replFields[] = array('TOKEN:LASTNAME', gT("Last name from token"));
+                $replFields[] = array('TOKEN:EMAIL', gT("Email from the token"));
+                $replFields[] = array('SID', gT("This question's survey ID number"));
+                $replFields[] = array('GID', gT("This question's group ID number"));
+                $replFields[] = array('QID', gT("This question's question ID number"));
+                $replFields[] = array('SGQ', gT("This question's SGQA code"));
                 $attributes = getTokenFieldsAndNames($surveyid, true);
                 foreach ($attributes as $attributefield => $attributedescription)
                 {
-                    $replFields[] = array('TOKEN:' . strtoupper($attributefield), sprintf($clang->gT("Token attribute: %s"), $attributedescription['description']));
+                    $replFields[] = array('TOKEN:' . strtoupper($attributefield), sprintf(gT("Token attribute: %s"), $attributedescription['description']));
                 }
-                $replFields[] = array('EXPIRY', $clang->gT("Survey expiration date"));
+                $replFields[] = array('EXPIRY', gT("Survey expiration date"));
             case 'editanswer':
                 return array($replFields, true);
 
             case 'assessment-text':
-                $replFields[] = array('TOTAL', $clang->gT("Overall assessment score"));
-                $replFields[] = array('PERC', $clang->gT("Assessment group score"));
+                $replFields[] = array('TOTAL', gT("Overall assessment score"));
+                $replFields[] = array('PERC', gT("Assessment group score"));
                 return array($replFields, false);
         }
     }

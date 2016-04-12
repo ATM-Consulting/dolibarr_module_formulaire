@@ -1,9 +1,25 @@
 $(document).ready(function() {
+
+
+    /**
+     * Callback to format action cell, with edit and trash buttons
+     *
+     * @param cellvalue
+     * @param options
+     * @param rowObject
+     * @return string
+     */
+    var actionsFormatter = function (cellvalue, options, rowObject) {
+        var rowType = rowObject[2];
+
+        return '<span data-toggle="tooltip" data-placement="bottom" title="' + sEditAttributeMsg + '" class="ui-pg-button icon-edit" onclick="jQuery.fn.fmatter.rowactions.call(this,\'edit\');"></span>&nbsp;<span class="ui-pg-button glyphicon text-danger glyphicon-trash" data-toggle="tooltip" data-placement="bottom" title="' + deleteCaption + '" onclick="jQuery.fn.fmatter.rowactions.call(this,\'del\');"></span>';
+    }
+
     var CM = [
-        {name: 'actions', width: 75, align: 'center', fixed: true, sortable: false, resize: false, formatter: 'actions', search: false},
-        {name: 'attribute_name', index: 'attribute_name', width: 250, align:"center", editable: true, editrules: {"required":true}},
-        {name: 'attribute_type', index: 'attribute_type', width: 250, align:"center", editable: true, edittype:"select", editoptions:{value:attributeTypeSelections}, stype: 'select', searchoptions: {sopt: ['eq', 'ne'], value:attributeTypeSearch}},
-        {name: 'visible', index: 'visible', width: 250, align: 'center', editable: true, formatter: checkboxFormatter, edittype: 'checkbox', edittype: "checkbox", editoptions: {value: "TRUE"}, stype: 'select', searchoptions: {sopt: ['eq', 'ne'], value: "TRUE:Yes;FALSE:No"}}
+        {name: 'actions', width: 75, align: 'left', fixed: true, sortable: false, resize: false, formatter: actionsFormatter, search: false},
+        {name: 'attribute_name', index: 'attribute_name', width: 250, align:"left", editable: true, editrules: {"required":true}},
+        {name: 'attribute_type', index: 'attribute_type', width: 250, align:"left", editable: true, edittype:"select", editoptions:{value:attributeTypeSelections}, stype: 'select', searchoptions: {sopt: ['eq', 'ne'], value:attributeTypeSearch}},
+        {name: 'visible', index: 'visible', width: 250, align: 'left', editable: true, formatter: checkboxFormatter, edittype: 'checkbox', edittype: "checkbox", editoptions: {value: "TRUE"}, stype: 'select', searchoptions: {sopt: ['eq', 'ne'], value: "TRUE:Yes;FALSE:No"}}
     ];
 
     $("#flashinfo").css("opacity", 0); //Make sure the flash message doesn't display in IE
@@ -11,7 +27,8 @@ $(document).ready(function() {
     // Set some custom messages
     $.jgrid.edit.msg.required = sRequired;
 
-    jQuery("#attributeControl").jqGrid({
+    $("#attributeControl").jqGrid({
+        direction: $('html').attr('dir'),
         loadtext : sLoadText,
         align:"center",
         url: attributeInfoUrl,
@@ -33,11 +50,26 @@ $(document).ready(function() {
         pager: "#pager",
         pgtext: pagerMsg,
         emptyrecords: emptyRecordsTxt,
+		gridComplete: function() {
+			// Disable "Add" button if more than 59 attributes
+			if($('#attributeControl').jqGrid('getGridParam', 'records') > 59) {
+				var newCell = $('#add_attributeControl').clone();
+				$('#add_attributeControl').hide().before(newCell);
+				$('#add_attributeControl:eq(0)').attr('id', 'add_attributeControl_new').attr('title', addDisabledCaption);
+				$('#add_attributeControl_new .ui-icon').addClass('ui-state-disabled');
+			}
+			else {
+				$('#add_attributeControl').show();
+				$('#add_attributeControl_new').remove();
+			}
+
+            // Turn on tooltip for add- and trash-buttons
+            $('[data-toggle="tooltip"]').tooltip();
+		},
         recordtext: viewRecordTxt
     });
 
-    jQuery.extend($.fn.fmatter , {
-        rowactions : function(rid,gid,act, pos) {
+    $.extend($.fn.fmatter.rowactions = function(act) {
             var delOptions = {
                 bCancel: sCancel,
                 bSubmit: sDeleteButtonCaption,                
@@ -46,6 +78,9 @@ $(document).ready(function() {
                 reloadAfterSubmit: true,
                 width: 400
             };
+            var $tr = $(this).closest("tr.jqgrow");
+            rid = $tr.attr("id");
+            gid = $(this).closest("table.ui-jqgrid-btable").attr('id').replace(/_frozen([^_]*)$/,'$1');
             switch(act)
             {
                 case 'edit' :
@@ -56,9 +91,9 @@ $(document).ready(function() {
                     break;
             }
         }
-    });
+    );
 
-    jQuery('#attributeControl').jqGrid('navGrid', '#pager',
+    $('#attributeControl').jqGrid('navGrid', '#pager',
         { add:true,
             edit:false,
             del:true,
@@ -68,11 +103,9 @@ $(document).ready(function() {
             deltitle: deleteCaption,
             edittitle: sEditAttributeMsg,
             searchtitle: searchMsg,
-            msg: {required: sRequired},
             refreshtitle: refreshMsg},
         {
             edittitle: sEditAttributeMsg,
-            msg: {required: sRequired}
         }, //Default settings for edit
         { addCaption: addCaption,
             bCancel: sCancel,
@@ -116,6 +149,8 @@ $(document).ready(function() {
         }, //Default settings for search
         {closeAfterAdd:true}
     );
+
+    jQuery('#attributeControl').jqGrid({});
 
 
 });

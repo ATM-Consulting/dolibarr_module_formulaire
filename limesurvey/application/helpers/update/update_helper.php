@@ -10,7 +10,6 @@
  * other free or open source software licenses.
  * See COPYRIGHT.php for copyright notices and details.
  *
- *	$Id$
  */
 
 /**
@@ -19,27 +18,33 @@
  */
 function CheckForDBUpgrades($subaction = null)
 {
-	$clang = Yii::app()->getController()->lang;
-	$dbversionnumber = Yii::app()->getConfig('dbversionnumber');
+    $dbversionnumber = Yii::app()->getConfig('dbversionnumber');
     $currentDBVersion=GetGlobalSetting('DBVersion');
-	$usertemplaterootdir = Yii::app()->getConfig('usertemplaterootdir');
-	$standardtemplaterootdir = Yii::app()->getConfig('standardtemplaterootdir');
+    $usertemplaterootdir = Yii::app()->getConfig('usertemplaterootdir');
+    $standardtemplaterootdir = Yii::app()->getConfig('standardtemplaterootdir');
     if (intval($dbversionnumber)>intval($currentDBVersion))
     {
         if(isset($subaction) && $subaction=="yes")
         {
             echo Yii::app()->getController()->_getAdminHeader();
-        	echo "<div style='width:90%; padding:1% 5%;background-color:#eee;'>";
             Yii::app()->loadHelper('update/updatedb');
             $result=db_upgrade_all(intval($currentDBVersion));
             if ($result)
             {
-                $data = "<br />".sprintf($clang->gT("Database has been successfully upgraded to version %s"),$dbversionnumber);
-                $data .= "<br /><a href='".Yii::app()->getController()->createUrl("/admin")."'>".$clang->gT("Back to main menu")."</a></div>";
+                $data =
+                '<div class="jumbotron message-box">'.
+                    '<h2 class="">'.gT('Success').'</h2>'.
+                    '<p class="lead">'.
+                        sprintf(gT("Database has been successfully upgraded to version %s"),$dbversionnumber).
+                    '</p>'.
+                    '<p>'.
+                        '<a href="'.Yii::app()->getController()->createUrl("/admin").'">'.gT("Back to main menu").'</a>'.
+                    '</p>'.
+                 '</div>';
             }
             else
             {
-                $data = "<p><a href='".Yii::app()->getController()->createUrl("/admin/update/sa/db")."'>".$clang->gT("Please fix this error in your database and try again")."</a></p></div>";
+                $data = "<p><a href='".Yii::app()->getController()->createUrl("/admin/databaseupdate/sa/db")."'>".gT("Please fix this error in your database and try again")."</a></p></div>";
             }
             return $data;
         }
@@ -50,22 +55,30 @@ function CheckForDBUpgrades($subaction = null)
 }
 
 function ShowDBUpgradeNotice() {
-    //$error=false;
-	$clang = Yii::app()->lang;
-	//$sitename = Yii::app()->getConfig('sitename');
-	return '<div class="messagebox">'
-    ."<div class='header'>".$clang->gT('Database upgrade').'</div><p>'
-    .$clang->gT('Please verify the following information before continuing with the database upgrade:').'</p><ul>'
-    ."<li><b>" .$clang->gT('Database type') . ":</b> " . Yii::app()->db->getDriverName() . "</li>"
-    ."<li><b>" .$clang->gT('Database name') . ":</b> " . getDBConnectionStringProperty('dbname') . "</li>"
-    ."<li><b>" .$clang->gT('Table prefix') . ":</b> " . Yii::app()->db->tablePrefix . "</li>"
-    ."<li><b>" .$clang->gT('Site name') . ":</b> " . Yii::app()->getConfig("sitename") . "</li>"
-    ."<li><b>" .$clang->gT('Root URL') . ":</b> " . Yii::app()->getController()->createUrl('') . "</li>"
-    .'</ul><br/>'
-    ."<p>"
-    ."<a href='".Yii::app()->getController()->createUrl("admin/update/sa/db/continue/yes")."'>" . $clang->gT('Click here to continue') . "</a>"
-    ."</p>"
-	.'</div>';
+    $message ='
+        <div class="jumbotron message-box">
+            <h2 class="">'.gT('Database upgrade').'</h2>
+            <p class="lead">'.gT('Please verify the following information before continuing with the database upgrade:').'</p>
+            <p>
+                <ul class="list-unstyled">
+                    <li><b>' .gT('Database type') . ':</b> ' . Yii::app()->db->getDriverName() . '</li>
+                    <li><b>' .gT('Database name') . ':</b> ' . getDBConnectionStringProperty('dbname') . '</li>
+                    <li><b>' .gT('Table prefix') . ':</b> ' . Yii::app()->db->tablePrefix . '</li>
+                    <li><b>' .gT('Site name') . ':</b> ' . Yii::app()->getConfig("sitename") . '</li>
+                    <li><b>' .gT('Root URL') . ':</b> ' . Yii::app()->getController()->createUrl('') . '</li>
+                </ul>
+            </p>
+
+            <p>
+                <a class="btn btn-lg btn-success" href="'.Yii::app()->getController()->createUrl("admin/databaseupdate/sa/db/continue/yes").'" role="button">
+                    '. gT('Click here to continue') .'
+                </a>
+            </p>
+
+        </div>
+    ';
+
+    return $message;
 }
 
 function getDBConnectionStringProperty($sProperty)

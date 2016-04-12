@@ -194,10 +194,10 @@ class modFormulaire extends DolibarrModules
 		
 
         $this->menu[$r]=array(
-			            'fk_menu'=>'fk_mainmenu=competence',			// Put 0 if this is a top menu
+			            'fk_menu'=>'fk_mainmenu=tools',			// Put 0 if this is a top menu
 			        	'type'=> 'left',			// This is a Top menu entry
 			        	'titre'=>$langs->trans('formulaire'),
-			        	'mainmenu'=> 'competence',
+			        	'mainmenu'=> 'tools',
 			        	'leftmenu'=> 'formulaires',		// Use 1 if you also want to add left menu entries using this descriptor. Use 0 if left menu entries are defined in a file pre.inc.php (old school).
 						'url'=> '/formulaire/index.php',
 						'langs'=> 'formulaire@formulaire',	// Lang file to use (without .lang) by module. File must be in langs/code_CODE/ directory.
@@ -210,10 +210,10 @@ class modFormulaire extends DolibarrModules
 
 		$r++;
         $this->menu[$r]=array(
-		            'fk_menu'=>'fk_mainmenu=competence,fk_leftmenu=formulaires',			// Put 0 if this is a top menu
+		            'fk_menu'=>'fk_mainmenu=tools,fk_leftmenu=formulaires',			// Put 0 if this is a top menu
 		        	'type'=> 'left',			// This is a Top menu entry
 		        	'titre'=> $langs->trans('adminFormulaire'),
-		        	'mainmenu'=> 'competence',
+		        	'mainmenu'=> 'tools',
 		        	'leftmenu'=> 'formulaires',		// Use 1 if you also want to add left menu entries using this descriptor. Use 0 if left menu entries are defined in a file pre.inc.php (old school).
 					'url'=> '/formulaire/admin.php',
 					'langs'=> 'formulaire@formulaire',	// Lang file to use (without .lang) by module. File must be in langs/code_CODE/ directory.
