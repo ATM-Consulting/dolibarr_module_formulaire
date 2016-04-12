@@ -91,7 +91,7 @@ class modFormulaire extends DolibarrModules
 		$this->dirs = array();
 
 		// Config pages. Put here list of php page, stored into mymodule/admin directory, to use to setup module.
-		$this->config_page_url = array("../limesurvey/admin@formulaire");
+		$this->config_page_url = array();
 
 		// Dependencies
 		$this->depends = array();		// List of modules id that must be enabled if this module is enabled
@@ -204,7 +204,7 @@ class modFormulaire extends DolibarrModules
 			        	'titre'=>$langs->trans('formulaire'),
 			        	'mainmenu'=> 'tools',
 			        	'leftmenu'=> 'formulaires',		// Use 1 if you also want to add left menu entries using this descriptor. Use 0 if left menu entries are defined in a file pre.inc.php (old school).
-						'url'=> '/formulaire/index.php',
+						'url'=> '',
 						'langs'=> 'formulaire@formulaire',	// Lang file to use (without .lang) by module. File must be in langs/code_CODE/ directory.
 						'position'=> 101,
 						'enabled'=> '1',			// Define condition to show or hide menu entry. Use '$conf->mymodule->enabled' if entry must be visible if module is enabled.
@@ -214,7 +214,7 @@ class modFormulaire extends DolibarrModules
         );
 
 		$r++;
-        $this->menu[$r]=array(
+        /*$this->menu[$r]=array(
 		            'fk_menu'=>'fk_mainmenu=tools,fk_leftmenu=formulaires',			// Put 0 if this is a top menu
 		        	'type'=> 'left',			// This is a Top menu entry
 		        	'titre'=> $langs->trans('adminFormulaire'),
@@ -229,7 +229,7 @@ class modFormulaire extends DolibarrModules
 					'user'=> 2
         );
 		
-		$r++;
+		$r++;*/
         
 		$this->menu[$r]=array(
 		            'fk_menu'=>'fk_mainmenu=tools,fk_leftmenu=formulaires',			// Put 0 if this is a top menu
