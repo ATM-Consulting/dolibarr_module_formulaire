@@ -174,6 +174,11 @@ class modFormulaire extends DolibarrModules
 		$this->rights[$r][4] = 'formulaire';
 		$this->rights[$r][5] = 'write';
 		$r++;
+		$this->rights[$r][0] = 7303;
+		$this->rights[$r][1] = 'Administrer les formulaires';
+		$this->rights[$r][3] = 0;
+		$this->rights[$r][4] = 'limesurvey';
+		$this->rights[$r][5] = 'write';
 		// Add here list of permission defined by an id, a label, a boolean and two constant strings.
 		// Example:
 		// $this->rights[$r][0] = 2000; 				// Permission id (must not be already used)
@@ -226,7 +231,20 @@ class modFormulaire extends DolibarrModules
 		
 		$r++;
         
-	
+		$this->menu[$r]=array(
+		            'fk_menu'=>'fk_mainmenu=tools,fk_leftmenu=formulaires',			// Put 0 if this is a top menu
+		        	'type'=> 'left',			// This is a Top menu entry
+		        	'titre'=> $langs->trans('adminLimesurvey'),
+		        	'mainmenu'=> 'tools',
+		        	'leftmenu'=> 'limesurvey',		// Use 1 if you also want to add left menu entries using this descriptor. Use 0 if left menu entries are defined in a file pre.inc.php (old school).
+					'url'=> '/formulaire/limesurvey/admin',
+					'langs'=> 'formulaire@formulaire',	// Lang file to use (without .lang) by module. File must be in langs/code_CODE/ directory.
+					'position'=> 103,
+					'enabled'=> '1',			// Define condition to show or hide menu entry. Use '$conf->mymodule->enabled' if entry must be visible if module is enabled.
+					'perms'=> '$user->rights->formulaire->limesurvey->write',			// Use 'perms'=>'$user->rights->mymodule->level1->level2' if you want your menu with a permission rules
+					'target'=> '',
+					'user'=> 2
+        );
 		
 		
 		// $r++;
