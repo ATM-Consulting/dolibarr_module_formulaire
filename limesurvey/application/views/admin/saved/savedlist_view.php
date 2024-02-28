@@ -1,7 +1,7 @@
-<div class="side-body">
+<div class='side-body <?php echo getSideBodyClass(true); ?>'>
     <h3>
         <span style='font-weight:bold;'><?php eT('Saved responses'); ?></span>
-        <?php echo $sSurveyName . ' ' . sprintf(gT('ID: %s'), $iSurveyId); ?>
+        <?php echo flattenText($sSurveyName) . ' ' . sprintf(gT('ID: %s'), $iSurveyId); ?>
     </h3>
 
         <div class="row">
@@ -40,10 +40,10 @@
                                             <?php } ?>
                                     </td>
 
-                                    <td><?php echo $oResult->identifier; ?></td>
+                                    <td><?php echo htmlspecialchars($oResult->identifier); ?></td>
                                     <td><?php echo $oResult->ip; ?></td>
                                     <td><?php echo $oResult->saved_date; ?></td>
-                                    <td><a href='mailto: <?php echo $oResult->email; ?>'> <?php echo $oResult->email; ?></td>
+                                    <td><?php echo CHtml::link(htmlspecialchars($oResult->email),'mailto:'.htmlspecialchars($oResult->email)); ?></td>
 
                                 </tr>
                                 <?php } ?>

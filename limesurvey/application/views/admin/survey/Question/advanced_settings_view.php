@@ -4,10 +4,10 @@
  */
 $currentfieldset='';
 ?>
-
+<!-- Advanced Settings -->
 <?php foreach ($attributedata as $index=>$aAttribute):?>
 
-    <!-- Fieldset -->
+    <!-- Fieldsets -->
     <?php if ($currentfieldset!=$aAttribute['category']): ?>
         <?php if ($currentfieldset!=''): ?>
             </fieldset>
@@ -21,22 +21,43 @@ $currentfieldset='';
     <div class="form-group">
 
         <!-- Label -->
-        <label class="col-sm-4 control-label" for='<?php echo $aAttribute['name'];?>' title='<?php echo $aAttribute['help'];?>'><?php echo $aAttribute['caption'];
-            if ($aAttribute['i18n']==true) { ?> (<?php echo $aAttribute['language'] ?>)<?php }?>:
+        <label class="col-sm-4 control-label" for='<?php echo $aAttribute['name'];?>' title='<?php echo $aAttribute['help'];?>'>
+            <?php
+                echo $aAttribute['caption'];
+                if ($aAttribute['i18n']==true) { ?> (<?php echo $aAttribute['language'] ?>)<?php }
+            ?>:
         </label>
 
         <!-- Input -->
         <div class="col-sm-8">
             <?php
-                if ($aAttribute['readonly'] && $bIsActive)
+                if ( $aAttribute['readonly'] || ($aAttribute['readonly_when_active'] && $bIsActive) )
                 {
-                    echo $aAttribute['value'];
+                    // Alternate solution (maybe better for 3.0) : add the readonly/disable attribute (for singleselect or switch or buttongroup : this is really needed)
+                    echo "<div class='form-control-static'>".\CHtml::encode($aAttribute['value'])."</div>";
                 }
                 else
                 {
                     switch ($aAttribute['inputtype'])
                     {
-                        // Single select
+                        // Switch
+                        case 'switch':
+                             $this->widget('yiiwheels.widgets.switch.WhSwitch', array(
+                                'name' => $aAttribute['name'],
+                                'value'=> $aAttribute['value'],
+                                'onLabel'=>gT('On'),
+                                'offLabel'=>gT('Off')
+                            ));
+                            break;
+                            // Button group
+                        case 'buttongroup':
+                            $this->widget('yiiwheels.widgets.buttongroup.WhButtonGroup', array(
+                                'name' => $aAttribute['name'],
+                                'value'=> $aAttribute['value'] ,
+                                'selectOptions'=>$aAttribute['options']
+                            ));
+                            break;
+                            // Single select
                         case 'singleselect':
                             echo "<select class='form-control' id='{$aAttribute['name']}' name='{$aAttribute['name']}'>";
                             foreach($aAttribute['options'] as $sOptionvalue=>$sOptiontext)
@@ -51,13 +72,13 @@ $currentfieldset='';
                             echo "</select>";
                             break;
 
-                        // Text
+                            // Text
                         case 'text':?>
                             <input type='text' class="form-control" id='<?php echo $aAttribute['name'];?>' name='<?php echo $aAttribute['name'];?>' value='<?php echo htmlspecialchars($aAttribute['value'],ENT_QUOTES, 'UTF-8');?>' />
                             <?php
                             break;
 
-                        // Interger
+                        // Integer
                         case 'integer':?>
                             <input type='text' class="form-control" id='<?php echo $aAttribute['name'];?>' name='<?php echo $aAttribute['name'];?>' value='<?php echo $aAttribute['value'];?>' />
                             <?php
@@ -79,4 +100,12 @@ $currentfieldset='';
                 }?>
             </div>
         </div>
-<?php endforeach; ?>
+<?php endforeach;
+foreach (Yii::app()->clientScript->scripts as $index=>$script)
+{
+    echo CHtml::script(implode("\n",$script));
+}
+Yii::app()->clientScript->reset();
+?>
+</fieldset>
+<!-- end of Advanced Settings -->

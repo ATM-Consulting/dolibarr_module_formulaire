@@ -954,7 +954,7 @@ class quexmlpdf extends pdf {
     /**
      * Get the height of responses in a sub question matrix
      * 
-     * @return int Height in mm between 1 and 100
+     * @return string Height in mm between 1 and 100
      *
      * @author Adam Zammit <adam.zammit@acspri.org.au>
      * @since 2013-10-25
@@ -980,7 +980,7 @@ class quexmlpdf extends pdf {
     /**
      * Get vertical height of a single response item
      * 
-     * @return int Height in mm between 1 and 100
+     * @return string Height in mm between 1 and 100
      *
      * @author Adam Zammit <adam.zammit@acspri.org.au>
      * @since 2013-10-25
@@ -1204,7 +1204,7 @@ class quexmlpdf extends pdf {
   /**
    * Get the section height
    *
-   * @return The section height
+   * @return string section height
    * @author Adam Zammit <adam.zammit@acspri.org.au>
    * @since  2013-07-30
    */
@@ -1216,7 +1216,7 @@ class quexmlpdf extends pdf {
   /**
    * Get the response label font sizes normal
    *
-   * @return normal font size
+   * @return resource font size
    * @author Adam Zammit <adam.zammit@acspri.org.au>
    * @since  2013-04-10
    */
@@ -1253,7 +1253,7 @@ class quexmlpdf extends pdf {
     /**
      * Get the response label font size small
      *
-     * @return small font size
+     * @return resource font size
      * @author Adam Zammit <adam.zammit@acspri.org.au>
      * @since  2013-04-10
      */
@@ -1264,7 +1264,7 @@ class quexmlpdf extends pdf {
   /**
    * Get the response text font size
    *
-   * @return int The response text font size
+   * @return resource The response text font size
    * @author Adam Zammit <adam.zammit@acspri.org.au>
    * @since  2013-04-10
    */
@@ -1373,7 +1373,7 @@ class quexmlpdf extends pdf {
 
     /**
      * Wrapper function for getCornerBoxes and getCornerLines methods
-     * @return bool whether to use corner lines or boxes
+     * @return string whether to use corner lines or boxes
      * @author A A D V S Abeysinghe <venura@acspri.org.au>
      * @since 2015-07-08
      */
@@ -1524,7 +1524,7 @@ class quexmlpdf extends pdf {
   /**
    * Set font size and style
    *
-   * @param string $size  Optional, defaults to 12
+   * @param integer $size  Optional, defaults to 12
    * @param string $style Optional, defaults to ''.
    *
    * @return TODO
@@ -1608,7 +1608,7 @@ class quexmlpdf extends pdf {
   /**
    * Set the background wash of the page
    *
-   * @param mixed $type Optional, defaults to 'empty'.
+   * @param string $type Optional, defaults to 'empty'.
    *
    * @author Adam Zammit <adam.zammit@acspri.org.au>
    * @since  2010-09-02
@@ -1644,7 +1644,7 @@ class quexmlpdf extends pdf {
   /**
    * The X coordinate of the start of the column
    *
-   * @return int The X coordinate of the start of the current column
+   * @return double The X coordinate of the start of the current column
    * @author Adam Zammit <adam.zammit@acspri.org.au>
    * @since  2012-05-30
    */
@@ -1659,7 +1659,7 @@ class quexmlpdf extends pdf {
   /**
    * The width of the writeable page
    *
-   * @return int The width of the writeable page
+   * @return double The width of the writeable page
    * @author Adam Zammit <adam.zammit@acspri.org.au>
    * @since  2010-09-02
    */
@@ -1671,7 +1671,7 @@ class quexmlpdf extends pdf {
   /**
    * The width of the writable column
    *
-   * @return int The width of the current column
+   * @return double The width of the current column
    * @author Adam Zammit <adam.zammit@acspri.org.au>
    * @since  2012-05-30
    */
@@ -2233,7 +2233,6 @@ class quexmlpdf extends pdf {
   /**
      * Import the settings/styles set from XML
      * 
-     * @param string $xml The settings in XML format
      * @author Adam Zammit <adam.zammit@acspri.org.au>
      * @since  2015-06-18
      */
@@ -2330,7 +2329,6 @@ class quexmlpdf extends pdf {
   /**
    * Draw the questionnaire info specified
    *
-   * @param string $text The text to draw in info style
    * @author Adam Zammit <adam.zammit@acspri.org.au>
    * @since  2011-12-21
    */
@@ -2465,7 +2463,9 @@ class quexmlpdf extends pdf {
           case 'number':
             $bgtype = 4;
           case 'currency':
+          case 'longtext':
           case 'text':
+            if ($type == 'longtext') { $bgtype = 6; }
             if (isset($response['rotate']))
               $this->drawMatrixTextHorizontal($subquestions,$response['width'],$text,$bgtype,$response['text']);
             else
@@ -2626,7 +2626,11 @@ class quexmlpdf extends pdf {
       if (isset($s['defaultvalue']))
         $defaultvalue = $s['defaultvalue'];
 
-      $this->drawText($s['text'],$width,$defaultvalue);
+	  if ($bgtype != 6) {
+	      $this->drawText($s['text'],$width,$defaultvalue);
+	  } else {
+        $this->drawLongText($width,$defaultvalue,$s['text']);
+    }
 
       $currentY = $this->GetY();
 
@@ -2670,7 +2674,7 @@ class quexmlpdf extends pdf {
    * Draw a barcode as a "question"
    *
    * @param string $subquestions
-   * @param mixed  $type
+   * @param string  $type
    *
    * @author Adam Zammit <adam.zammit@acspri.org.au>
    * @since  2012-06-22
@@ -2828,7 +2832,7 @@ class quexmlpdf extends pdf {
     $border = array('LTRB' => array('width' => $this->textResponseBorder, 'dash' => 0));
     //Align to skip column on right
     $this->SetX((($this->getColumnWidth() + $this->getColumnX()) - $this->skipColumnWidth - $rwidth),false);
-    //Add to pay layout
+    //Add to page layout
     $this->addBox($this->GetX(),$this->GetY(),$this->GetX() + $rwidth, $this->GetY() + $height);
     $this->SetDrawColor($this->lineColour[0]);
 
@@ -2836,8 +2840,9 @@ class quexmlpdf extends pdf {
     if ($defaultvalue !== false)
       $text = $defaultvalue;
 
-    $this->Cell($rwidth,$height,$text,$border,0,'',true,'',0,false,'T','T');
-    $currentY = $currentY + $height;
+    $this->MultiCell($rwidth,$height,$text,$border,'L',true,1,$this->GetX(),$currentY,true,0,false,true,$height,'T',true);
+    
+	$currentY = $currentY + $height;
     $this->SetY($currentY,false);
   }
 
@@ -3110,12 +3115,21 @@ class quexmlpdf extends pdf {
       else
         $this->addBoxGroup($bgtype,$s['varname'],$parenttext . $this->subQuestionTextSeparator . $s['text']);
 
-      $string = false;
-      if (isset($s['defaultvalue']))
-        $string = substr($defaultvalue,0,$width);
-
-      //Draw the cells
-      $this->drawCells($width,$string);
+	  if ($bgtype != 6) {
+	      $string = false;
+	      if (isset($s['defaultvalue']))
+	        $string = substr($s['defaultvalue'],0,$width);
+	
+	      //Draw the cells
+	      $this->drawCells($width,$string);
+	  } else {
+		  $this->setBackground('empty');
+          $border = array('LTRB' => array('width' => $this->textResponseBorder, 'dash' => 0));
+          //Add to page layout
+          $this->addBox($this->GetX(),$this->GetY(),$this->GetX() + $rwidth, $this->GetY() + $height);
+          $this->SetDrawColor($this->lineColour[0]);
+          $this->MultiCell($rwidth,$this->singleResponseAreaHeight,$s['defaultvalue'],$border,'L',true,1,$this->GetX(),$currentY,true,0,false,true,$height,'T',true);
+      }
 
       //Move X for a gap
       $this->SetX($this->GetX() + $this->textResponseLineSpacing,false);
@@ -3604,10 +3618,10 @@ class quexmlpdf extends pdf {
     if (isset($other['defaultvalue']) && $other['defaultvalue'] !== false)
       $defaultvalue = $other['defaultvalue'];
 
-    if ($btid == 3)
+    if ($btid != 6)
       $this->drawText($other['text'],$other['width'],$defaultvalue);
     else
-      $this->drawLongText($other['width'],$defaultValue,$other['text']);
+      $this->drawLongText($other['width'],$defaultvalue,$other['text']);
 
     //Insert a gap here
     $this->Rect($this->getColumnX(),$this->GetY(),$this->getColumnWidth(),$this->subQuestionLineSpacing,'F',array(),$this->backgroundColourQuestion);
@@ -3656,7 +3670,6 @@ class quexmlpdf extends pdf {
   /**
    * Add a new section to the page
    *
-   * @param string $text The text of the section
    * @param string $desc The description of this section
    * @param string $info Information for this section
    */
@@ -3683,7 +3696,7 @@ class quexmlpdf extends pdf {
    * Convert mm to pixels based on the set ppi (dpi)
    *
    * @param float $mm Measurement in millimetres
-   * @return int Pixel value as an integer
+   * @return double Pixel value as an integer
    */
   public function mm2px($mm)
   {

@@ -2,6 +2,7 @@
 
 /**
  * @todo Not used, copied to admin/pluginmanager.php. Delete this file?
+ * @todo Actually, it's used for action direct.
  */
 class PluginsController extends LSYii_Controller
 {
@@ -40,7 +41,7 @@ class PluginsController extends LSYii_Controller
     {
         if(!Permission::model()->hasGlobalPermission('settings','update'))
         {
-            Yii::app()->session['flashmessage'] =gT('Access denied!');
+            Yii::app()->setFlashMessage(gT("Access denied!"),'error');
             $this->redirect($this->createUrl("/admin/plugins"));
         }
         $oPlugin = Plugin::model()->findByPk($id);
@@ -78,7 +79,7 @@ class PluginsController extends LSYii_Controller
     {
         if(!Permission::model()->hasGlobalPermission('settings','update'))
         {
-            Yii::app()->session['flashmessage'] =gT('Access denied!');
+            Yii::app()->setFlashMessage(gT("Access denied!"),'error');
             $this->redirect($this->createUrl("/admin/plugins"));
         }
         $arPlugin      = Plugin::model()->findByPk($id)->attributes;
@@ -86,7 +87,7 @@ class PluginsController extends LSYii_Controller
 
         if ($arPlugin === null)
         {
-            Yii::app()->user->setFlash('pluginmanager', 'Plugin not found');
+            Yii::app()->user->setFlash('pluginmanager', gT('Plugin not found'));
             $this->redirect(array('plugins/'));
         }
 
@@ -101,7 +102,7 @@ class PluginsController extends LSYii_Controller
                 $aSave[$name] = App()->request->getPost($name, null);
             }
             $oPluginObject->saveSettings($aSave);
-            Yii::app()->user->setFlash('pluginmanager', 'Settings saved');
+            Yii::app()->user->setFlash('pluginmanager', gT('Settings saved'));
             if(App()->request->getPost('redirect'))
             {
                 $this->redirect(App()->request->getPost('redirect'), true);
@@ -113,7 +114,7 @@ class PluginsController extends LSYii_Controller
         if (empty($aSettings))
         {
             // And show a message
-            Yii::app()->user->setFlash('pluginmanager', 'This plugin has no settings');
+            Yii::app()->user->setFlash('pluginmanager', gT('This plugin has no settings.'));
             $this->redirect('plugins/index', true);
         }
 
@@ -133,7 +134,7 @@ class PluginsController extends LSYii_Controller
     {
         if(!Permission::model()->hasGlobalPermission('settings','update'))
         {
-            Yii::app()->session['flashmessage'] =gT('Access denied!');
+            Yii::app()->setFlashMessage(gT("Access denied!"),'error');
             $this->redirect($this->createUrl("/admin/plugins"));
         }
         $oPlugin = Plugin::model()->findByPk($id);
@@ -184,6 +185,7 @@ class PluginsController extends LSYii_Controller
             $this->renderText($sOutput);
         }
     }
+
     /**
      * Launch the event newUnsecureRequest
      * @param $plugin : the target
@@ -219,7 +221,7 @@ class PluginsController extends LSYii_Controller
     {
         if(!Permission::model()->hasGlobalPermission('settings','read'))
         {
-            Yii::app()->session['flashmessage'] =gT('Access denied!');
+            Yii::app()->setFlashMessage(gT("Access denied!"),'error');
             $this->redirect($this->createUrl("/admin"));
         }
 

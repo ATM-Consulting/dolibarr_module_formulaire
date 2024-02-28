@@ -138,8 +138,8 @@ class Save {
 
         $duplicate = SavedControl::model()->findByAttributes(array('sid' => $surveyid, 'identifier' => $_POST['savename']));
         $duplicate = SavedControl::model()->findByAttributes(array('sid' => $surveyid, 'identifier' => $_POST['savename']));
-        if (strpos($_POST['savename'],'/'!==false || strpos($_POST['savepass'],'/'!==false)) || strpos($_POST['savename'],'&'!==false || strpos($_POST['savepass'],'&'!==false))
-            || strpos($_POST['savename'],'\\'!==false || strpos($_POST['savepass'],'\\'!==false)))
+        if (strpos($_POST['savename'],'/')!==false || strpos($_POST['savepass'],'/')!==false || strpos($_POST['savename'],'&')!==false || strpos($_POST['savepass'],'&')!==false
+            || strpos($_POST['savename'],'\\')!==false || strpos($_POST['savepass'],'\\')!==false)
         {
             $errormsg .= gT("You may not use slashes or ampersands in your name or password.")."<br />\n";
             return;
@@ -147,6 +147,11 @@ class Save {
         elseif (!empty($duplicate) && $duplicate->count() > 0)  // OK - AR count
         {
             $errormsg .= gT("This name has already been used for this survey. You must use a unique save name.")."<br />\n";
+            return;
+        }
+        elseif (!empty($_POST['saveemail']) && !validateEmailAddress($_POST['saveemail']))  // Check if the email address is valid
+        {
+            $errormsg .= gT("This is not a valid email address. Please provide a valid email address or leave it empty.")."<br />\n";
             return;
         }
         else
@@ -179,7 +184,7 @@ class Save {
             $saved_control->identifier = $_POST['savename']; // Binding does escape, so no quoting/escaping necessary
             $saved_control->access_code = hash('sha256',$_POST['savepass']);
             $saved_control->email = $_POST['saveemail'];
-            $saved_control->ip = getIPAddress();
+            $saved_control->ip = ($thissurvey['ipaddr']=='Y')?getIPAddress():'';
             $saved_control->saved_thisstep = $thisstep;
             $saved_control->status = 'S';
             $saved_control->saved_date = $today;

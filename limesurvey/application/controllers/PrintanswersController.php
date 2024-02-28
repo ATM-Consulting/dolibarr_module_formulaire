@@ -87,7 +87,7 @@
                 ."\t".sprintf(gT("Please contact %s ( %s ) for further assistance."), Yii::app()->getConfig("siteadminname"), Yii::app()->getConfig("siteadminemail"))."\n"
                 ."</center><br />\n";
                 echo templatereplace(file_get_contents($oTemplate->viewPath.'/endpage.pstpl'),array());
-                doFooter();
+                doFooter($iSurveyID);
                 exit;
             }
             //Fin session time out
@@ -98,7 +98,7 @@
             //Ensure Participants printAnswer setting is set to true or that the logged user have read permissions over the responses.
             if ($aSurveyInfo['printanswers'] == 'N' && !Permission::model()->hasSurveyPermission($iSurveyID,'responses','read'))
             {
-                throw new CHttpException(401, 'You are not allowed to print answers.');
+                throw new CHttpException(401, gT('You are not allowed to print answers.'));
             }
 
             //CHECK IF SURVEY IS ACTIVATED AND EXISTS
@@ -106,10 +106,12 @@
             $sAnonymized = $aSurveyInfo['anonymized'];
             //OK. IF WE GOT THIS FAR, THEN THE SURVEY EXISTS AND IT IS ACTIVE, SO LETS GET TO WORK.
             //SHOW HEADER
-            if ($sExportType != 'pdf')
+            if (empty($sExportType))
             {
                 $sOutput = CHtml::form(array("printanswers/view/surveyid/{$iSurveyID}/printableexport/pdf"), 'post')
                 ."<center><input class='btn btn-default' type='submit' value='".gT("PDF export")."'id=\"exportbutton\"/><input type='hidden' name='printableexport' /></center></form>";
+                $sOutput .= CHtml::form(array("printanswers/view/surveyid/{$iSurveyID}/printableexport/quexmlpdf"), 'post')
+                ."<center><input class='btn btn-default' type='submit' value='".gT("queXMLPDF export")."'id=\"exportbutton\"/><input type='hidden' name='printableexport' /></center></form>";
                 $sOutput .= "\t<div class='printouttitle'><strong>".gT("Survey name (ID):")."</strong> $sSurveyName ($iSurveyID)</div><p>&nbsp;\n";
                 LimeExpressionManager::StartProcessingPage(true);  // means that all variables are on the same page
                 // Since all data are loaded, and don't need JavaScript, pretend all from Group 1
@@ -139,7 +141,7 @@
                     {
                         if($sAnonymized != 'Y')
                         {
-                                $sOutput .= "\t<tr class='printanswersquestion'><td>{$fname[0]} {$fname[1]} {$sFieldname}</td><td class='printanswersanswertext'>{$fname[2]}</td></tr>";
+                                $sOutput .= "\t<tr class='printanswersquestion'><td>{$fname[0]} {$fname[1]}</td><td class='printanswersanswertext'>{$fname[2]}</td></tr>";
                         }
                     }
                     elseif (substr($sFieldname,0,4) != 'qid_') // Question text is already in subquestion text, skipping it
@@ -165,9 +167,9 @@
                 echo "</body></html>";
 
                 ob_flush();
-            }
-            if($sExportType == 'pdf')
-            {
+                LimeExpressionManager::FinishProcessingGroup();
+                LimeExpressionManager::FinishProcessingPage();
+            } else if($sExportType == 'pdf') {
                 // Get images for TCPDF from template directory
                 define('K_PATH_IMAGES', getTemplatePath($aSurveyInfo['template']).DIRECTORY_SEPARATOR);
 
@@ -218,9 +220,29 @@
                 header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
                 $sExportFileName = sanitize_filename($sSurveyName);
                 $oPDF->Output($sExportFileName."-".$iSurveyID.".pdf","D");
-            }
+                LimeExpressionManager::FinishProcessingGroup();
+                LimeExpressionManager::FinishProcessingPage();
+            } else if ($sExportType == 'quexmlpdf') {
 
-            LimeExpressionManager::FinishProcessingGroup();
-            LimeExpressionManager::FinishProcessingPage();
+                Yii::import("application.libraries.admin.quexmlpdf",TRUE);
+
+                $quexmlpdf = new quexmlpdf();
+
+                // Setting the selected language for printout
+                App()->setLanguage($sLanguage);
+
+                $quexmlpdf->setLanguage($sLanguage);
+
+                set_time_limit(120);
+
+                Yii::app()->loadHelper('export');
+
+                $quexml = quexml_export($iSurveyID,$sLanguage,$sSRID);
+
+                $quexmlpdf->create($quexmlpdf->createqueXML($quexml));
+
+                $sExportFileName = sanitize_filename($sSurveyName);
+                $quexmlpdf->Output($sExportFileName."-".$iSurveyID."-queXML.pdf",'D');
+			}
         }
     }

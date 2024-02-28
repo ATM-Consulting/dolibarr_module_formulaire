@@ -49,7 +49,6 @@ function templatereplace($line, $replacements = array(), &$redata = array(), $de
         'showgroupinfo',
         'showqnumcode',
         'showxquestions',
-        'sitename',
         'sitelogo',
         'surveylist',
         'templatedir',
@@ -76,6 +75,14 @@ function templatereplace($line, $replacements = array(), &$redata = array(), $de
     if (!isset($showgroupinfo)) { $showgroupinfo = Yii::app()->getConfig('showgroupinfo'); }
     if (!isset($showqnumcode)) { $showqnumcode = Yii::app()->getConfig('showqnumcode'); }
     $_surveyid = Yii::app()->getConfig('surveyID');
+
+    if($_surveyid) {
+        $totalgroups = QuestionGroup::model()->getTotalGroupsWithQuestions($_surveyid);
+    }
+    else {
+        $totalgroups = "";
+    }
+
     if (!isset($showxquestions)) { $showxquestions = Yii::app()->getConfig('showxquestions'); }
     if (!isset($s_lang)) { $s_lang = (isset(Yii::app()->session['survey_'.$_surveyid]['s_lang']) ? Yii::app()->session['survey_'.$_surveyid]['s_lang'] : 'en'); }
     if($_surveyid && !isset($thissurvey))
@@ -83,7 +90,6 @@ function templatereplace($line, $replacements = array(), &$redata = array(), $de
         $thissurvey=getSurveyInfo($_surveyid,$s_lang);
     }
     if (!isset($captchapath)) { $captchapath = ''; }
-    if (!isset($sitename)) { $sitename=Yii::app()->getConfig('sitename'); }
     if (!isset($saved_id) && isset(Yii::app()->session['survey_'.$_surveyid]['srid'])) { $saved_id=Yii::app()->session['survey_'.$_surveyid]['srid'];}
 
 
@@ -128,42 +134,47 @@ function templatereplace($line, $replacements = array(), &$redata = array(), $de
     if(stripos ($line,"{TEMPLATECSS}"))
     {
         // This package is created in model TemplateConfiguration::createTemplatePackage
-        if(!YII_DEBUG)
+        if(!YII_DEBUG ||  Yii::app()->getConfig('use_asset_manager'))
         {
             Yii::app()->clientScript->registerPackage( 'survey-template' );
         }
         else
         {
+
             // In debug mode, the Asset Manager is not used
             // So, dev don't need to update the directory date to get the new version of their template.
             // They must think about refreshing their brower's cache (ctrl + F5)
 
-            $aCssFiles = $oTemplate->config->files->css->filename;
-            $aJsFiles = $oTemplate->config->files->js->filename;
             $aOtherFiles = $oTemplate->otherFiles;
 
-            foreach($aCssFiles as $sCssFile)
-            {
-                if (file_exists($oTemplate->path .DIRECTORY_SEPARATOR. $sCssFile))
-                {
-                    Yii::app()->getClientScript()->registerCssFile("{$templateurl}$sCssFile",$sCssFile['media']);
-                }
-            }
-
-            foreach($aJsFiles as $sJsFile)
-            {
-                if (file_exists($oTemplate->path .DIRECTORY_SEPARATOR. $sJsFile))
-                {
-                    Yii::app()->getClientScript()->registerScriptFile("{$templateurl}$sJsFile");
-                }
-            }
-
+            //var_dump($aCssFiles);var_dump($aJsFiles);die();
 
             /* RTL CSS & JS */
             if (getLanguageRTL(App()->language))
             {
                 $aCssFiles = (array) $oTemplate->config->files->rtl->css->filename;
                 $aJsFiles  = (array) $oTemplate->config->files->rtl->js->filename;
+
+                foreach($aCssFiles as $sCssFile)
+                {
+                    if (file_exists($oTemplate->path .DIRECTORY_SEPARATOR. $sCssFile))
+                    {
+                        Yii::app()->getClientScript()->registerCssFile("{$templateurl}$sCssFile");
+                    }
+                }
+
+                foreach($aJsFiles as $sJsFile)
+                {
+                    if (file_exists($oTemplate->path .DIRECTORY_SEPARATOR. $sJsFile))
+                    {
+                        Yii::app()->getClientScript()->registerScriptFile("{$templateurl}$sJsFile");
+                    }
+                }
+            }
+            else
+            {
+                $aCssFiles = (array) $oTemplate->config->files->css->filename;
+                $aJsFiles  = (array) $oTemplate->config->files->js->filename;
 
                 foreach($aCssFiles as $sCssFile)
                 {
@@ -194,9 +205,14 @@ function templatereplace($line, $replacements = array(), &$redata = array(), $de
     {
         $surveyformat = "";
     }
-    if($oTemplate->config->engine->cssframework)
+    if( isset($oTemplate->config->engine->cssframework) && $oTemplate->config->engine->cssframework)
     {
-        $surveyformat .= " ".$oTemplate->config->engine->cssframework."-engine ";
+        $aCssFramework = (array) $oTemplate->config->engine->cssframework;
+        if( ! empty($aCssFramework) )
+        {
+            $surveyformat .= " ".$oTemplate->config->engine->cssframework."-engine ";
+        }
+
     }
 
     if ((isset(Yii::app()->session['step']) && Yii::app()->session['step'] % 2) && $surveyformat!="allinone")
@@ -289,7 +305,6 @@ function templatereplace($line, $replacements = array(), &$redata = array(), $de
         $_therearexquestions = '';
     };
 
-
     if (isset($token))
     {
         $_token = $token;
@@ -364,7 +379,7 @@ function templatereplace($line, $replacements = array(), &$redata = array(), $de
     {
         $_datestamp = '-';
     }
-    if (isset($thissurvey['allowsave']) and $thissurvey['allowsave'] == "Y")
+    if (isset($thissurvey['allowsave']) and $thissurvey['allowsave'] == "Y" && !$iscompleted)
     {
         $_saveall = doHtmlSaveAll(isset($move)?$move:NULL);
         $_savelinks = doHtmlSaveLinks(isset($move)?$move:NULL);
@@ -509,17 +524,27 @@ function templatereplace($line, $replacements = array(), &$redata = array(), $de
 
     if (isset($thissurvey['usecaptcha']) && function_exists("ImageCreate") && isCaptchaEnabled('saveandloadscreen', $thissurvey['usecaptcha']))
     {
-        $_loadform .="
-            <div class='form-group load-survey-row load-survey-captcha'>
-                <label class='control-label col-sm-3 load-survey-label label-cell' for='loadsecurity'>" . gT("Security question:") . "</label>
-                <div class='col-sm-2 captcha-image' valign='middle'>
-                    <img src='".Yii::app()->getController()->createUrl('/verification/image/sid/'.((isset($surveyid)) ? $surveyid : ''))."' alt='' />
+        $_loadform .='<div class="col-sm-12 form-group">
+                <label class="col-md-4 col-sm-12 control-label">
+                    <p class="col-sm-6 col-md-12 remove-padding">'.gT("Please solve the following equation:").'</p>
+                    <span class="col-sm-6 col-md-12">';
+        $_loadform .=Yii::app()->getController()->widget('CCaptcha',array(
+                    'buttonOptions'=>array('class'=> 'btn btn-xs btn-info'),
+                    'buttonType' => 'button',
+                    'buttonLabel' => gt('Reload image', 'unescaped')
+                ),true);
+        $_loadform .='</span>
+                </label>
+                <div class="col-sm-6">
+                    <div>&nbsp;</div>'
+                    . CHtml::textField('loadsecurity', '', array(
+                        'id' => 'captchafield',
+                        'class' => 'text input-sm form-control ',
+                        'required' => 'required'
+                    )).'
                 </div>
-                <div class='col-sm-3 captcha-input' valign='middle'>
-                    <input class='form-control' type='text' size='5' maxlength='3' id='loadsecurity' name='loadsecurity' value='' alt=''/>
-                </div>
-            </div>
-        ";
+            </div><br/>';
+
     }
 
     $_loadform .="
@@ -550,14 +575,18 @@ function templatereplace($line, $replacements = array(), &$redata = array(), $de
     {
         $_assessment_current_total = '';
     }
-
-    if (isset($thissurvey['googleanalyticsapikey']) && trim($thissurvey['googleanalyticsapikey']) != '')
+    if(isset($thissurvey['googleanalyticsapikey']) && $thissurvey['googleanalyticsapikey'] === "9999useGlobal9999")
+    {
+        $_googleAnalyticsAPIKey = trim(getGlobalSetting('googleanalyticsapikey'));
+    }
+    else if (isset($thissurvey['googleanalyticsapikey']) && trim($thissurvey['googleanalyticsapikey']) != '')
     {
         $_googleAnalyticsAPIKey = trim($thissurvey['googleanalyticsapikey']);
     }
     else
     {
-        $_googleAnalyticsAPIKey = trim(getGlobalSetting('googleanalyticsapikey'));
+        $_googleAnalyticsAPIKey = "";
+
     }
     $_googleAnalyticsStyle = (isset($thissurvey['googleanalyticsstyle']) ? $thissurvey['googleanalyticsstyle'] : '1');
     $_googleAnalyticsJavaScript = '';
@@ -607,13 +636,11 @@ EOD;
                 $_trackURL = htmlspecialchars($thissurvey['name'] . '-[' . $surveyid . ']/[' . $gseq . ']-' . $_groupname);
                 $_googleAnalyticsJavaScript = <<<EOD
 <script>
-(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+(function(i,s,o,g,r,a,m){ i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){ (i[r].q=i[r].q||[]).push(arguments) }
+,i[r].l=1*new Date();a=s.createElement(o), m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+ })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
 
 ga('create', '$_googleAnalyticsAPIKey', 'auto');
-ga('send', 'pageview');
 ga('send', 'pageview', '$_trackURL');
 
 </script>
@@ -628,7 +655,15 @@ EOD;
         $_endtext = $thissurvey['surveyls_endtext'];
     }
 
-    $sitelogo = (!empty($oTemplate->siteLogo))?'<img class="img-responsive" src="'.App()->getAssetManager()->publish( $oTemplate->path.'/'.$oTemplate->siteLogo).'"/>':'';
+    $sitelogo = '';
+
+    if(!empty($oTemplate->siteLogo))
+    {
+        if (file_exists ($oTemplate->path.'/'.$oTemplate->siteLogo ))
+        {
+            $sitelogo= '<img class="img-responsive site-surveylist-logo custom custom-margin top-15 bottom-15" src="'.App()->getAssetManager()->publish( $oTemplate->path.'/'.$oTemplate->siteLogo).'" alt=""/>';
+        }
+    }
 
     // Set the array of replacement variables here - don't include curly braces
     $coreReplacements = array();
@@ -637,7 +672,7 @@ EOD;
     $coreReplacements['ASSESSMENTS'] = $assessmenthtml;
     $coreReplacements['ASSESSMENT_CURRENT_TOTAL'] = $_assessment_current_total;
     $coreReplacements['ASSESSMENT_HEADING'] = gT("Your assessment");
-    $coreReplacements['CHECKJAVASCRIPT'] = "<noscript><span class='warningjs'>".gT("Caution: JavaScript execution is disabled in your browser. You may not be able to answer all questions in this survey. Please, verify your browser parameters.")."</span></noscript>";
+    $coreReplacements['CHECKJAVASCRIPT'] = "<noscript role='alert' id='checkjavascript'><p class='alert alert-danger warningjs'>".gT("Caution: JavaScript execution is disabled in your browser. You may not be able to answer all questions in this survey. Please, verify your browser parameters.")."</p></noscript>";
     $coreReplacements['CLEARALL'] = $_clearall;
     $coreReplacements['CLEARALL_LINKS'] = $_clearalllinks;
     $coreReplacements['CLOSEWINDOW'] = ''; // Obsolete tag - keep this line for compatibility reaons
@@ -664,9 +699,10 @@ EOD;
     $coreReplacements['MOVENEXTBUTTON'] = isset($movenextbutton) ? $movenextbutton : '';    // global
     $coreReplacements['NOSURVEYID'] = (isset($surveylist))?$surveylist['nosid']:'';
     $coreReplacements['NUMBEROFQUESTIONS'] = $_totalquestionsAsked;
+    $coreReplacements['NUMBEROFGROUPS'] = $totalgroups;
     $coreReplacements['PERCENTCOMPLETE'] = isset($percentcomplete) ? $percentcomplete : '';    // global
     $coreReplacements['PRIVACY'] = isset($privacy) ? $privacy : '';    // global
-    $coreReplacements['PRIVACYMESSAGE'] = "<span style='font-weight:bold; font-style: italic;'>".gT("A Note On Privacy")."</span><br />".gT("This survey is anonymous.")."<br />".gT("The record of your survey responses does not contain any identifying information about you, unless a specific survey question explicitly asked for it.").' '.gT("If you used an identifying token to access this survey, please rest assured that this token will not be stored together with your responses. It is managed in a separate database and will only be updated to indicate whether you did (or did not) complete this survey. There is no way of matching identification tokens with survey responses.");
+    $coreReplacements['PRIVACYMESSAGE'] = "<span class='privacy-title'>".gT("A note on privacy")."</span><span class='privacy-body'><br />".gT("This survey is anonymous.")."<br />".gT("The record of your survey responses does not contain any identifying information about you, unless a specific survey question explicitly asked for it.").' '.gT("If you used an identifying token to access this survey, please rest assured that this token will not be stored together with your responses. It is managed in a separate database and will only be updated to indicate whether you did (or did not) complete this survey. There is no way of matching identification tokens with survey responses.").'</span>';
     $coreReplacements['QUESTION_INDEX']=isset($questionindex) ? $questionindex: '';
     $coreReplacements['QUESTION_INDEX_MENU']=isset($questionindexmenu) ? $questionindexmenu: '';
     $coreReplacements['RESTART'] = $_restart;
@@ -679,8 +715,8 @@ EOD;
     $coreReplacements['SAVEFORM'] = $_saveform;
     $coreReplacements['SAVEHEADING'] = gT("Save your unfinished survey");
     $coreReplacements['SAVEMESSAGE'] = gT("Enter a name and password for this survey and click save below.")."<br />\n".gT("Your survey will be saved using that name and password, and can be completed later by logging in with the same name and password.")."<br /><br />\n<span class='emailoptional'>".gT("If you give an email address, an email containing the details will be sent to you.")."</span><br /><br />\n".gT("After having clicked the save button you can either close this browser window or continue filling out the survey.");
-    $coreReplacements['SID'] = Yii::app()->getConfig('surveyID','');// Allways use surveyID from config
-    $coreReplacements['SITENAME'] = isset($sitename) ? $sitename : '';  // global
+    $coreReplacements['SID'] = Yii::app()->getConfig('surveyID','');// Allways use surveyID from config, leave it to be sure to have something (EM setVariableAndTokenMappingsForExpressionManager replace it)
+    $coreReplacements['SITENAME'] = Yii::app()->getConfig('sitename');
     $coreReplacements['SITELOGO'] = $sitelogo;
     $coreReplacements['SUBMITBUTTON'] = $_submitbutton;
     $coreReplacements['SUBMITCOMPLETE'] = "<strong>".gT("Thank you!")."<br /><br />".gT("You have completed answering the questions in this survey.")."</strong><br /><br />".gT("Click on 'Submit' now to complete the process and save your answers.");
@@ -691,7 +727,7 @@ EOD;
     $coreReplacements['SURVEYLANGUAGE'] = App()->language;
     $coreReplacements['SURVEYLIST'] = (isset($surveylist))?$surveylist['list']:'';
     $coreReplacements['SURVEYLISTHEADING'] =  (isset($surveylist))?$surveylist['listheading']:'';
-    $coreReplacements['SURVEYNAME'] = (isset($thissurvey['name']) ? $thissurvey['name'] : '');
+    $coreReplacements['SURVEYNAME'] = (isset($thissurvey['name']) ? $thissurvey['name'] : Yii::app()->getConfig('sitename'));
     $coreReplacements['SURVEYRESOURCESURL'] = (isset($thissurvey['sid']) ? Yii::app()->getConfig("uploadurl").'/surveys/'.$thissurvey['sid'].'/' : '');
     $coreReplacements['TEMPLATECSS'] = $_templatecss;
     $coreReplacements['TEMPLATEJS'] = $_templatejs;
@@ -700,6 +736,7 @@ EOD;
     $coreReplacements['TOKEN'] = (!$anonymized ? $_token : '');// Silently replace TOKEN by empty string
     $coreReplacements['URL'] = $_linkreplace;
     $coreReplacements['WELCOME'] = (isset($thissurvey['welcome']) ? $thissurvey['welcome'] : '');
+    $coreReplacements['CLOSE_TRANSLATION'] = gT('Close');
     if(!isset($replacements['QID']))
     {
         Yii::import('application.helpers.SurveyRuntimeHelper');

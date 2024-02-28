@@ -23,14 +23,14 @@
 <tr  id='javatbd<?php echo $myfname; ?>' class="question-item answer-item numeric-item  text-item" <?php echo $sDisplayStyle;?>>
     <td class='text-right align-middle'>
         <?php if($alert):?>
-            <div class="alert alert-danger errormandatory"  role="alert">
+            <label class="control-label numeric-label label label-danger errormandatory"  role="alert">
                 <?php echo $labelText;?>
-            </div> <!-- alert -->
+            </label> <!-- alert -->
+        <?php else:?>
+            <label class='control-label numeric-label' for="answer<?php echo $myfname; ?>">
+                <?php echo $labelText;?>
+            </label>
         <?php endif;?>
-
-        <label class='control-label numeric-label' for="answer<?php echo $myfname; ?>">
-            <?php echo $labelText;?>
-        </label>
     </td>
 
     <?php if (!empty($prefix)): ?>
@@ -41,19 +41,20 @@
         </td>
     <?php endif; ?>
 
-    <td class='col-sm-<?php echo $tiwidth;?>'>
-        <input
-            class="text form-control numeric <?php echo $kpclass;?>"
-            type="text"
-            size=""
-            name="<?php echo $myfname;?>"
-            id="answer<?php echo $myfname; ?>"
-            value="<?php echo $dispVal;?>"
-            onkeyup="<?php echo $checkconditionFunction; ?>"
-            title="<?php eT('Only numbers may be entered in this field.'); ?>"
-            <?php echo $maxlength; ?>
-        />
-
+    <td>
+        <div class="col-sm-<?php echo $tiwidth;?>">
+            <input
+                class="text form-control numeric <?php echo $kpclass;?>"
+                type="text"
+                name="<?php echo $myfname;?>"
+                id="answer<?php echo $myfname; ?>"
+                value="<?php echo $dispVal;?>"
+                onkeyup="<?php echo $checkconditionFunction; ?>"
+                title="<?php eT('Only numbers may be entered in this field.'); ?>"
+                <?php echo $maxlength; ?>
+                />
+        </div>
+        <input type="hidden" name="slider_user_no_action_<?php echo $myfname; ?>" id="slider_user_no_action_<?php echo $myfname; ?>" value="<?php echo $dispVal;?>" />
     </td>
 
     <?php if (!empty($suffix)): ?>
@@ -64,7 +65,5 @@
         </td>
     <?php endif; ?>
 
-    <!-- xs-12 -->
-    <input type="hidden" name="slider_user_no_action_<?php echo $myfname; ?>" id="slider_user_no_action_<?php echo $myfname; ?>" value="<?php echo $dispVal;?>" />
 </tr>
 <!-- end of answer_row -->

@@ -2,7 +2,7 @@
     App()->getClientScript()->registerPackage('jquery-selectboxes');
 ?>
 <script type="text/javascript">
-    var msgAtLeastOneLanguageNeeded = '<?php eT("You must set at last one available language.",'js'); ?>';
+    var msgCantRemoveDefaultLanguage = '<?php eT("You can't remove the default language.",'js'); ?>';
 </script>
 
 <div class="container-fluid welcome full-page-wrapper">
@@ -17,16 +17,29 @@
         <li role="presentation" ><a data-toggle="tab" href='#presentation'><?php eT("Presentation"); ?></a></li>
         <li role="presentation" ><a data-toggle="tab" href='#language'><?php eT("Language"); ?></a></li>
         <li role="presentation" ><a data-toggle="tab" href='#interfaces'><?php eT("Interfaces"); ?></a></li>
+        <li role="presentation" ><a data-toggle="tab" href='#storage'><?php eT("Storage"); ?></a></li>
 </ul>
 
 <?php echo CHtml::form(array("admin/globalsettings"), 'post', array('class'=>'form-horizontal','id'=>'frmglobalsettings','name'=>'frmglobalsettings'));?>
 <div class="tab-content">
     <div id="overview" class="tab-pane  in active col-md-6 col-md-offset-1">
-            <?php $this->renderPartial("./global_settings/_overview", array( 'usercount'=>$usercount, 'surveycount'=>$surveycount ,'activesurveycount'=>$activesurveycount ,'deactivatedsurveys'=>$deactivatedsurveys ,'activetokens'=>$activetokens ,'deactivatedtokens'=>$deactivatedtokens)); ?>
+            <?php $this->renderPartial("./global_settings/_overview", array(
+                'usercount'=>$usercount,
+                'surveycount'=>$surveycount,
+                'activesurveycount'=>$activesurveycount,
+                'deactivatedsurveys'=>$deactivatedsurveys,
+                'activetokens'=>$activetokens,
+                'deactivatedtokens'=>$deactivatedtokens)
+            ); ?>
     </div>
 
-    <div id="general" class="tab-pane col-md-6 col-md-offset-1">
-            <?php $this->renderPartial("./global_settings/_general"); ?>
+    <div id="general" class="tab-pane col-md-10 col-md-offset-1">
+            <?php $this->renderPartial("./global_settings/_general", array(
+                'aListOfThemeObjects' => $aListOfThemeObjects,
+                'aEncodings' => $aEncodings,
+                'thischaracterset' => $thischaracterset,
+                'sideMenuBehaviour' => $sideMenuBehaviour)
+            ); ?>
     </div>
 
     <div id="email" class="tab-pane col-md-6 col-md-offset-1">
@@ -46,11 +59,21 @@
     </div>
 
     <div id="language" class="tab-pane col-md-6 col-md-offset-1">
-        <?php $this->renderPartial("./global_settings/_language", array( 'restrictToLanguages'=>$restrictToLanguages, 'allLanguages'=>$allLanguages, 'excludedLanguages'=>$excludedLanguages)); ?>
+        <?php $this->renderPartial("./global_settings/_language", array(
+            'restrictToLanguages'=>$restrictToLanguages,
+            'allLanguages'=>$allLanguages,
+            'excludedLanguages'=>$excludedLanguages));
+        ?>
     </div>
 
     <div id="interfaces" class="tab-pane col-md-6 col-md-offset-1">
         <?php $this->renderPartial("./global_settings/_interfaces"); ?>
+    </div>
+
+    <div id="storage" class="tab-pane col-md-6 col-md-offset-1">
+        <?php
+            $this->renderPartial("./global_settings/_storage");
+        ?>
     </div>
 </div>
     <input type='hidden' name='restrictToLanguages' id='restrictToLanguages' value='<?php implode(' ',$restrictToLanguages); ?>'/>

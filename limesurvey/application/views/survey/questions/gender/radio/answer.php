@@ -3,7 +3,6 @@
  * Gender question, radio item Html
  *
  * @var $name
- * @var $checkconditionFunction
  * @var $fChecked
  * @var $mChecked
  * @var $naChecked
@@ -14,10 +13,10 @@
 <!--Gender question, radio display -->
 
 <!-- answer -->
-<div class="answers-list radio-list">
+<ul class="answers-list radio-list list-unstyled">
 
     <!-- Female -->
-    <div class="col-xs-4 answer-item radio-item">
+    <li class="answer-item radio-item radio">
         <input
             class="radio"
             type="radio"
@@ -25,16 +24,22 @@
             id="answer<?php echo $name;?>F"
             value="F"
             <?php echo $fChecked; ?>
-            onclick="<?php echo $checkconditionFunction; ?>"
+            onclick="checkconditions(this.value, this.name, this.type);"
+            aria-labelledby="label-answer<?php echo $name;?>F"
         />
 
-        <label for="answer<?php echo $name;?>F" class="answertext">
+        <label for="answer<?php echo $name;?>F" class="answertext"></label>
+        <!--
+             The label text is provided inside a div,
+             To respect the global HTML flow of other question types
+        -->
+        <div class="label-text label-clickable" id="label-answer<?php echo $name;?>F">
             <?php eT('Female');?>
-        </label>
-    </div>
+        </div>
+    </li>
 
     <!-- Male -->
-    <div class="col-xs-4 answer-item radio-item">
+    <li class="answer-item radio-item radio">
         <input
             class="radio"
             type="radio"
@@ -42,17 +47,23 @@
             id="answer<?php echo $name;?>M"
             value="M"
             <?php echo $mChecked;?>
-            onclick="<?php echo $checkconditionFunction; ?>"
+            onclick="checkconditions(this.value, this.name, this.type);"
+            aria-labelledby="label-answer<?php echo $name;?>M"
         />
 
-        <label for="answer<?php echo $name;?>M" class="answertext">
+        <label for="answer<?php echo $name;?>M" class="answertext"></label>
+        <!--
+             The label text is provided inside a div,
+             To respect the global HTML flow of other question types
+        -->
+        <div class="label-text label-clickable" id="label-answer<?php echo $name;?>M">
             <?php eT('Male');?>
-        </label>
-    </div>
+        </div>
+    </li>
 
     <!-- No answer -->
     <?php if($noAnswer):?>
-        <div class="col-xs-4 answer-item radio-item noanswer-item">
+        <li class="answer-item radio-item noanswer-item radio">
             <input
                 class="radio"
                 type="radio"
@@ -60,21 +71,26 @@
                 id="answer<?php echo $name;?>"
                 value=""
                 <?php echo $naChecked;?>
-                onclick="<?php echo $checkconditionFunction; ?>"
+                onclick="checkconditions(this.value, this.name, this.type);"
+                aria-labelledby="label-answer<?php echo $name;?>"
             />
 
-            <label for="answer<?php echo $name;?>" class="answertext">
+            <label for="answer<?php echo $name;?>" class="answertext"></label>
+            <!--
+                 The label text is provided inside a div,
+                 To respect the global HTML flow of other question types
+            -->
+            <div class="label-text label-clickable" id="label-answer<?php echo $name;?>">
                 <?php eT('No answer'); ?>
-            </label>
-        </div>
+            </div>
+        </li>
     <?php endif;?>
-
-    <!-- Value -->
-    <input
-        type="hidden"
-        name="java<?php echo $name;?>"
-        id="java<?php echo $name; ?>"
-        value="<?php echo $value;?>"
-    />
-</div>
+</ul>
+<!-- Value -->
+<input
+    type="hidden"
+    name="java<?php echo $name;?>"
+    id="java<?php echo $name; ?>"
+    value="<?php echo $value;?>"
+/>
 <!-- end of answer -->

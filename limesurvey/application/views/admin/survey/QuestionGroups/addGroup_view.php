@@ -10,7 +10,7 @@
 </script>
 
 <?php echo PrepareEditorScript(false, $this); $active = 1;?>
-<div class="side-body" id="edit-survey-text-element">
+<div id='edit-survey-text-element' class='side-body <?php echo getSideBodyClass(false); ?>'>
     <h3><?php eT("Add question group"); ?></h3>
     <div class="row">
 
@@ -20,7 +20,7 @@
                 <li role="presentation" class="<?php if($active){ echo 'active'; $active=0; }?>">
                     <a data-toggle="tab" href="#<?php echo $grouplang; ?>">
                             <?php echo getLanguageNameFromCode($grouplang,false);
-                            if ($grouplang==$baselang) { ?>(<?php eT("Base language"); ?>) <?php } ?>
+                            if ($grouplang==$baselang) { ?> (<?php eT("Base language"); ?>) <?php } ?>
                     </a>
                 </li>
             <?php endforeach; ?>
@@ -43,14 +43,14 @@
                             <div class="form-group">
                                 <label class="control-label col-sm-2" for='group_name_<?php echo $grouplang; ?>'><?php eT("Title:"); ?></label>
                                 <div class="col-sm-3">
-                                    <input class="form-control group_title" type='text' size='80' maxlength='100' name='group_name_<?php echo $grouplang; ?>' id='group_name_<?php echo $grouplang; ?>' /><span class='annotation'> <?php eT("Required"); ?></span></li>
+                                    <input class="form-control group_title" type='text' size='80' maxlength='100' name='group_name_<?php echo $grouplang; ?>' id='group_name_<?php echo $grouplang; ?>' /></li>
                                 </div>
                             </div>
 
                             <!-- Description -->
                             <div class="form-group">
                                 <label class="control-label col-sm-2" for='description_<?php echo $grouplang; ?>'><?php eT("Description:"); ?></label>
-                                <div class="col-sm-3 input-group">
+                                <div class="col-sm-4 input-group">
                                     <?php echo CHtml::textArea("description_{$grouplang}","",array('class'=>'form-control','cols'=>'60','rows'=>'8','id'=>"description_{$grouplang}")); ?>
                                     <?php echo getEditor("group-desc","description_".$grouplang, "[".gT("Description:", "js")."](".$grouplang.")",$surveyid,'','',$action); ?>
                                 </div>

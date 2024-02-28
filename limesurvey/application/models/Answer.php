@@ -1,7 +1,7 @@
 <?php if ( ! defined('BASEPATH')) exit('No direct script access allowed');
 /*
  * LimeSurvey
- * Copyright (C) 2007-2011 The LimeSurvey Project Team / Carsten Schmitz
+ * Copyright (C) 2007-2017 The LimeSurvey Project Team / Carsten Schmitz
  * All rights reserved.
  * License: GNU/GPL License v2 or later, see LICENSE.php
  * LimeSurvey is free software. This version may have been modified pursuant
@@ -42,7 +42,7 @@ class Answer extends LSActiveRecord
     * Returns the primary key of this table
     *
     * @access public
-    * @return array
+    * @return string[]
     */
     public function primaryKey()
     {
@@ -77,10 +77,22 @@ class Answer extends LSActiveRecord
         return array(
             array('qid','numerical', 'integerOnly'=>true),
             array('code','length', 'min' => 1, 'max'=>5),
+            array('language','length', 'min' => 2, 'max'=>20),// in array languages ?
+            // Unicity of key
+            array(
+                'code', 'unique', 'caseSensitive'=>false, 'criteria'=>array(
+                    'condition' => 'language=:language AND qid=:qid AND scale_id=:scale_id',
+                    'params' => array(
+                        ':language' => $this->language,
+                        ':qid' => $this->qid,
+                        ':scale_id' => $this->scale_id
+                    )
+                ),
+                'message' => gT('Answer codes must be unique by question.')
+            ),
             array('answer','LSYii_Validators'),
             array('sortorder','numerical', 'integerOnly'=>true,'allowEmpty'=>true),
             array('assessment_value','numerical', 'integerOnly'=>true,'allowEmpty'=>true),
-            array('language','length', 'min' => 2, 'max'=>20),// in array languages ?
             array('scale_id','numerical', 'integerOnly'=>true,'allowEmpty'=>true),
         );
     }
@@ -100,9 +112,9 @@ class Answer extends LSActiveRecord
      *
      * @staticvar array $answerCache
      * @param type $qid
-     * @param type $code
-     * @param type $sLanguage
-     * @param type $iScaleID
+     * @param string $code
+     * @param string $sLanguage
+     * @param integer $iScaleID
      * @return array
      */
     function getAnswerFromCode($qid, $code, $sLanguage, $iScaleID=0)
@@ -146,11 +158,13 @@ class Answer extends LSActiveRecord
     function insertRecords($data)
     {    
         $oRecord = new self;
-        foreach ($data as $k => $v)
+        foreach ($data as $k => $v) {
             $oRecord->$k = $v;
-        if($oRecord->validate())
+        }
+        if($oRecord->validate()) {
             return $oRecord->save();
-        tracevar($oRecord->getErrors());
+        }
+        Yii::log(\CVarDumper::dumpAsString($oRecord->getErrors()),'warning','application.models.Answer.insertRecords');
     }
 
     /**
@@ -196,6 +210,10 @@ class Answer extends LSActiveRecord
         return $command->query();
     }
 
+    /**
+     * @param string $fields
+     * @param string $orderby
+     */
     public function getQuestionsForStatistics($fields, $condition, $orderby)
     {
         return Yii::app()->db->createCommand()

@@ -15,7 +15,7 @@
 
 <div class="row">
     <div class="col-lg-12">
-<?php if($html_from_server!=""):?>
+<?php if ($html_from_server != "") :?>
     <div>
         <?php echo $html_from_server;?>
     </div>
@@ -23,23 +23,20 @@
 
 <?php
     $changelog = "";
-    if($changelogs->changingBranch)
-    {
-        $changelog.= gT("Note: Because you are updating from a stable to an unstable version or vice versa a change log might not be available or incomplete.")."\n\n";
+if ($changelogs->changingBranch) {
+    $changelog .= gT("Note: Because you are updating from a stable to an unstable version or vice versa a change log might not be available or incomplete.") . "\n\n";
+}
+$currentVersion = Yii::app()->getConfig("versionnumber") . " Build " . Yii::app()->getConfig("buildnumber");
+foreach (array_reverse($changelogs->changelogentries) as $changelogentry) {
+    if (trim($changelogentry->changelog != '')) {
+          $tempfromversion = $changelogentry->versionnumber;
+          $tempfrombuild = $changelogentry->build;
+
+          $changelog .= "Changes in {$changelogentry->versionnumber} Build {$changelogentry->build} from {$currentVersion} --- Legend: + New feature, # Updated feature, - Bug fix\n";
+          $changelog .= $changelogentry->changelog."\n";
+          $currentVersion = "{$changelogentry->versionnumber} Build {$changelogentry->build}";
     }
-
-   foreach  ($changelogs->changelogentries as $changelogentry)
-   {
-        if (trim($changelogentry->changelog !=''))
-        {
-
-            $tempfromversion=$changelogentry->versionnumber;
-            $tempfrombuild=$changelogentry->build;
-
-            $changelog.="Changes from ".Yii::app()->getConfig("versionnumber")." Build ".Yii::app()->getConfig("buildnumber")." to {$changelogentry->versionnumber} Build {$changelogentry->build} --- Legend: + New feature, # Updated feature, - Bug fix\n";
-            $changelog.=$changelogentry->changelog;
-        }
-   }
+}
 
 ?>
 
@@ -56,9 +53,9 @@ echo $changelog;
 
         <?php
             $formUrl = Yii::app()->getController()->createUrl("admin/update/sa/filesystem/");
-            echo CHtml::beginForm($formUrl, 'post', array("id"=>"launchFileSystemForm"));
-            echo CHtml::hiddenField('destinationBuild' , $destinationBuild);
-            echo CHtml::hiddenField('access_token' , $access_token);
+            echo CHtml::beginForm($formUrl, 'post', array("id" => "launchFileSystemForm"));
+            echo CHtml::hiddenField('destinationBuild', $destinationBuild);
+            echo CHtml::hiddenField('access_token', $access_token);
         ?>
 
         <a class="btn btn-default" href="<?php echo Yii::app()->createUrl("admin/update"); ?>" role="button" aria-disabled="false">
@@ -67,14 +64,14 @@ echo $changelog;
 
 
     <?php
-        echo CHtml::submitButton(gT('Continue','unescaped'), array('id'=>'step2launch', "class"=>"btn btn-default ajax_button launch_update"));
+        echo CHtml::submitButton(gT('Continue', 'unescaped'), array('id' => 'step2launch', "class" => "btn btn-default ajax_button launch_update"));
         echo CHtml::endForm();
     ?>
 
     </div>
 </div>
 <!-- this javascript code manage the step changing. It will catch the form submission, then load the comfortupdate for the required build -->
-<script type="text/javascript" src="<?php echo Yii::app()->baseUrl; ?>/scripts/admin/comfortupdate/comfortUpdateNextStep.js"></script>
+<script type="text/javascript" src="<?php echo Yii::app()->baseUrl; ?>/assets/scripts/admin/comfortupdate/comfortUpdateNextStep.js"></script>
 <script>
 $('#launchFileSystemForm').comfortUpdateNextStep({'step': 2});
 </script>

@@ -4,10 +4,11 @@
  */
 ?>
 
-<div class="side-body">
-	<h3><?php eT("Send email reminder"); ?></h3>
-	<div class="row">
-		<div class="col-lg-12 content-right">
+<div class='side-body <?php echo getSideBodyClass(false); ?>'>
+    <?php $this->renderPartial('/admin/survey/breadcrumb', array('oSurvey'=>$oSurvey, 'token'=>true, 'active'=>gT("Send email reminder"))); ?>
+    <h3><?php eT("Send email reminder"); ?></h3>
+    <div class="row">
+        <div class="col-lg-12 content-right">
             <?php echo PrepareEditorScript(true, $this); ?>
 
             <?php if ($thissurvey['active'] != 'Y'):?>
@@ -40,7 +41,7 @@
                         echo ' ><a data-toggle="tab" href="#'.$language.'">' . getLanguageNameFromCode($language, false);
                         if ($language == $baselang)
                         {
-                            echo "(" . gT("Base language") . ")";
+                            echo " (" . gT("Base language") . ")";
                         }
                         echo "</a></li>";
                     }
@@ -88,7 +89,7 @@
                                 <label class='control-label col-sm-2' for='message_<?php echo $language; ?>'><?php eT("Message:"); ?></label>
                                 <div class="htmleditor col-sm-6">
                                     <?php echo CHtml::textArea("message_{$language}",$textarea,array('cols'=>80,'rows'=>20, 'class' => 'form-control')); ?>
-                                    <?php echo getEditor("email-rem", "message_$language", "[" . gT("Reminder Email:", "js") . "](" . $language . ")", $surveyid, '', '', "tokens"); ?>
+                                    <?php echo getEditor("email-reminder", "message_$language", "[" . gT("Reminder Email:", "js") . "](" . $language . ")", $surveyid, '', '', "tokens"); ?>
                                 </div>
                             </div>
                         </div>
@@ -106,7 +107,14 @@
                     <div class='form-group'>
                         <label class='control-label col-sm-2' for='bypassbademails'><?php eT("Bypass token with failing email addresses:"); ?></label>
                         <div class='col-sm-1'>
-                            <?php echo CHtml::dropDownList('bypassbademails', 'Y',array("Y"=>gT("Yes",'unescaped'),"N"=>gT("No",'unescaped')), array('class' => 'form-control')); ?>
+                            <?php
+                            $this->widget('yiiwheels.widgets.switch.WhSwitch', array(
+                                'name' => "bypassbademails",
+                                'id'=>"bypassbademails",
+                                'value' => '1',
+                                'onLabel'=>gT('On'),
+                                'offLabel' => gT('Off')));
+                            ?>
                         </div>
                     </div>
 
@@ -128,7 +136,14 @@
                     <div class='form-group'>
                           <?php echo CHtml::label(gT("Bypass date control before sending email:"),'bypassdatecontrol', array('title'=>gt("If some tokens have a 'valid from' date set which is in the future, they will not be able to access the survey before that 'valid from' date."),'unescaped', 'class' => 'control-label col-sm-2')); ?>
                           <div class='col-sm-1'>
-                              <?php echo CHtml::checkbox('bypassdatecontrol', false); ?>
+                          <?php
+                            $this->widget('yiiwheels.widgets.switch.WhSwitch', array(
+                                'name' => "bypassdatecontrol",
+                                'id'=>"bypassdatecontrol",
+                                'value' => '0',
+                                'onLabel'=>gT('On'),
+                                'offLabel' => gT('Off')));
+                            ?>
                           </div>
                           <div class='col-sm-9'></div>
                     </div>
@@ -151,3 +166,12 @@
         </form>
     </form>
 </div>
+
+
+<script>
+    $( document ).ready(function(){
+        $('#send-reminders-button').on('click', function(){
+            $("#sendreminder").submit();
+        })
+    });
+</script>

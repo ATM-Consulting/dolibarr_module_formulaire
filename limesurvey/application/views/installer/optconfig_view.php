@@ -5,7 +5,7 @@
     <div class="col-md-9">
     <h2><?php echo $title; ?></h2>
     <legend><?php echo $descp; ?></legend>
-    <div class='alert alert-success'><?php echo $confirmation; ?></div>
+    <?php if (isset($confirmation)) echo "<div class='alert alert-success'>".$confirmation."</div>"; ?>
     <div style="color:red; font-size:12px;">
         <?php echo CHtml::errorSummary($model, null, null, array('class' => 'alert alert-danger')); ?>
     </div>
@@ -76,7 +76,6 @@
     ?>
         <div class="row navigator">
             <div class="col-md-4">
-                <input class="btn btn-default" type="button" value="<?php eT("Previous"); ?>" onclick="javascript: window.open('<?php echo $this->createUrl("installer/welcome"); ?>', '_top')" />
             </div>
             <div class="col-md-4"></div>
             <div class="col-md-4">

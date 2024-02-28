@@ -13,7 +13,7 @@
 <tr id="javatbd<?php echo $myfname;?>" class="well question-item answer-item dropdown-item array<?php echo $zebra; ?>">
     <th class="answertext align-middle">
         <?php if($error): ?>
-            <div class="alert alert-danger" role="alert">
+            <div class="label label-danger" role="alert">
                 <?php echo $answertext; ?>
             </div>
         <?php else:?>
@@ -29,7 +29,7 @@
         />
     </th>
     <td>
-        <select class="form-control" name="<?php echo $myfname; ?>" id="answer<?php echo $myfname; ?>" onchange="<?php echo $checkconditionFunction; ?>(this.value, this.name, this.type);">
+        <select class="form-control" name="<?php echo $myfname; ?>" id="answer<?php echo $myfname; ?>" onchange="checkconditions(this.value, this.name, this.type);">
             <?php foreach($options as $option):?>
                 <option value="<?php echo $option['value'];?>" <?php echo $option['selected'];?>>
                     <?php echo $option['text'];?>

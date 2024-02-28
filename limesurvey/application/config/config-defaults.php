@@ -59,8 +59,8 @@ $config['maxLoginAttempt']    =   3;                // Lock them out after 3 att
 $config['timeOutTime']        =   60 * 10;          // Lock them out for 10 minutes.
 
 // Site Settings
-$config['dropdownthreshold']  =   '25';             // The number of answers to a list type question before it switches from Radio Buttons to List
 $config['printanswershonorsconditions'] = 1;        // If set to 1, only relevant answers to questions can be printed by user. If set to 0, also questions not shown are printed
+$config['allow_templates_to_overwrite_views'] = 0;
 
 // Only applicable, of course, if you have chosen 'R' for $dropdowns and/or $lwcdropdowns
 $config['repeatheadings']     =   '25';             // The number of answers to show before repeating the headings in array (flexible) questions. Set to 0 to turn this feature off
@@ -82,7 +82,7 @@ $config['allowunblacklist']     =  'N';             // Allow participant to unbl
 $config['userideditable']     =  'N';               // Allow editing of user IDs
 $config['defaulttemplate']    =  'default';         // This setting specifys the default theme used for the 'public list' of surveys
 
-$config['allowedtemplateuploads'] = 'gif,ico,jpg,png,css,js,map,json,eot,svg,ttf,woff,txt,md';  // File types allowed to be uploaded in the templates section.
+$config['allowedtemplateuploads'] = 'gif,ico,jpg,png,css,js,map,json,eot,svg,ttf,woff,txt,md,xml,woff2';  // File types allowed to be uploaded in the templates section.
 
 $config['allowedresourcesuploads'] = '7z,aiff,asf,avi,bmp,csv,doc,docx,fla,flv,gif,gz,gzip,ico,jpeg,jpg,mid,mov,mp3,mp4,mpc,mpeg,mpg,ods,odt,pdf,png,ppt,pxd,qt,ram,rar,rm,rmi,rmvb,rtf,sdc,sitd,swf,sxc,sxw,tar,tgz,tif,tiff,txt,vsd,wav,wma,wmv,xls,xlsx,xml,zip,pstpl,css,js';   // File types allowed to be uploaded in the resources sections, and with the HTML Editor
 
@@ -92,9 +92,6 @@ $config['showpopups']         =   1;                // Show popup messages if ma
 // 1=Show popup message, 0=Show message on page instead.
 
 $config['maxemails']          = 50;               // The maximum number of emails to send in one go (this is to prevent your mail server or script from timeouting when sending mass mail)
-
-// Enable or Disable LDAP feature
-$config['enableLdap'] = false;
 
 // Experimental parameters, only change if you know what you're doing
 //
@@ -389,7 +386,7 @@ $config['bPdfQuestionBold'] = '0';		  // Questions in bold (1) or normal (0)
 $config['bPdfQuestionBorder'] = '1'; 	  // Border in questions. Accepts 0:no border, 1:border
 $config['bPdfResponseBorder'] = '1';	  // Border in responses. Accepts 0:no border, 1:border
 
-// QueXML-PDF: If set to true, the printable_help attribute will be visible on the exported PDF questionnaires
+// QueXML-PDF: If set to true, the printable_help attribute will be visible on the exported PDF survey
 // If used, the appearance (font size, justification, etc.) may be adjusted by editing td.questionHelpBefore and $helpBeforeBorderBottom of quexml.
 $config['quexmlshowprintablehelp'] = false;
 
@@ -487,7 +484,7 @@ $config['showqnumcode'] = 'choose';
 * If LimeSurvey comes up as normal, then everything is fine. If you
 * get a page not found error or permission denied error then
 */
-$config['force_ssl'] = ''; // DO not turn on unless you are sure your server supports SSL/HTTPS
+$config['force_ssl'] = 'neither'; // DO not turn on unless you are sure your server supports SSL/HTTPS
 
 
 /**
@@ -504,6 +501,15 @@ $config['force_ssl'] = ''; // DO not turn on unless you are sure your server sup
 * it to true until you fix the problem.
 */
 $config['ssl_emergency_override'] = false;
+
+/**
+* Sets if any part of LimeSUrvey may be embedded in an iframe
+* Valid values are allow, sameorigin
+* Default: allow
+* Recommended: sameorigin
+* Using 'deny' is currently not supported as it will disable the template editor preview and probably file upload.
+*/
+$config['x_frame_options'] = 'allow';
 
 
 // Get your IP Info DB key from http://ipinfodb.com/
@@ -525,6 +531,12 @@ $config['GeoNamesUsername'] = 'limesurvey';
 
 // Google Translate API key:  https://code.google.com/apis/language/translate/v2/getting_started.html
 $googletranslateapikey = '';
+
+/**
+ * characterset (string)
+ * Default character set for file import/export
+ */
+$config['characterset'] = 'auto';
 
 /**
 * This variable defines the total space available to the file upload question across all surveys. If set to 0 then no limit applies.
@@ -568,13 +580,6 @@ $config['iSessionExpirationTime'] = 7200;
 */
 $config['InsertansUnsupportedtypes'] = array();
 
-/**
-* This parameter sets if and what update notifications are shown to the administrator. Valid values are 'never', 'stable', 'both' (for stable and unstable)
-* Default is 'stable'
-* @var string
-*/
-$config['updatenotification'] = 'both';
-
 // Proxy settings for ComfortUpdate
 /**
 * Set these if you are behind a proxy and want to update LS using ComfortUpdate
@@ -585,20 +590,17 @@ $config['updatenotification'] = 'both';
 $config['proxy_host_name'] = '';
 $config['proxy_host_port'] = 80;
 
+/** Forced superadmin rights, users in this array can not have superadmin total right disable.
+ * Default use the user created at the installation.
+ * @var integer[]
+ */
+$config['forcedsuperadmin'] = array(1);
 
 // === Advanced Setup
-// The following parameters need information from config.php
-// and thus are defined here (After reading your config.php file).
-// This means that if you want to tweak these very advanced parameters
-// you'll have to do this in this file and not in config.php
-// In this case, don't forget to backup your config-defaults.php settings when upgrading LS
-// and report them to the new config-defaults.php file (Do not simply overwrite the new
-// config-defaults file with your old one
-
 //The following url and dir locations do not need to be modified unless you have a non-standard
 //LimeSurvey installation. Do not change unless you know what you are doing.
 
-if(!isset($argv[0]))
+if(!isset($argv[0]) && Yii::app()!=null)
 {
     $config['publicurl'] = Yii::app()->baseUrl . '/';                          // The public website location (url) of the public survey script
 }
@@ -621,7 +623,6 @@ $config['styleurl']                = $config['publicurl'].'styles/';
 
 $config['publicstyleurl']          = $config['publicurl'].'styles-public/';
 $config['sCKEditorURL']            = $config['third_party'].'ckeditor';
-//$config['sCKEditorURL']            = '/scripts/admin/ckeditor.36';
 $config['usertemplaterooturl']     = $config['uploadurl'].'/templates';     // Location of the user templates
 
 $config['adminimageurl']           = $config['styleurl'].$config['admintheme'].'/images/';         // Location of button bar files for admin script
@@ -654,9 +655,27 @@ $config['bNumRealValue']             = 0;
 // Home page default Settings
 $config['show_logo'] = 'show';
 $config['show_last_survey_and_question'] = 'show';
+$config['show_survey_list_search'] = 'show';
 $config['boxes_by_row'] = '3';
 $config['boxes_offset'] = '3';
 
+// Bounce settings
+$config['bounceaccounthost']='';
+$config['bounceaccounttype']='off';
+$config['bounceencryption']='off';
+$config['bounceaccountuser']='';
+
+// Question selector
+$config['defaultquestionselectormode']='default';
+
+// Template editor mode
+$config['defaulttemplateeditormode']='default';
+
+// Side Menu behaviout
+$config['sideMenuBehaviour']='adaptive';
+
+// Hide update key
+$config['hide_update_key']=false;
 
 return $config;
 //settings deleted

@@ -214,15 +214,14 @@ class Permission extends LSActiveRecord
                 'img' => 'global'
             ),
             'participantpanel' => array(
-                'import' => false,
-                'title' => gT("Participant panel"),
-                'description' => gT("Permission to create your own participants in the central participants database (for which all permissions are automatically given) and view, update and delete participants from other users"),
+                'title' => gT("Central participant database"),
+                'description' => gT("Permission to create participants in the central participants database (for which all permissions are automatically given) and view, update and delete participants from other users"),
                 'img' => 'cpdb'
             ),
         );
         uasort($aPermissions, array(__CLASS__,"comparePermissionTitle"));
         $aPermissions['superadmin'] = array(
-            'create' => false,
+            'create' => true, // Currently : is set/unset tis Permission to other user's
             'update' => false,
             'delete' => false,
             'import' => false,
@@ -262,8 +261,7 @@ class Permission extends LSActiveRecord
             'img' => 'usergroup'
         );
 
-        foreach ($aPermissions as &$permission)
-        {
+        foreach ($aPermissions as &$permission) {
             $permission = array_merge($defaults, $permission);
         }
         return $aPermissions;
@@ -311,9 +309,9 @@ class Permission extends LSActiveRecord
     *
     * @param mixed $iUserID
     * @param mixed $iEntityID
-    * @param mixed $sEntityName
+    * @param string $sEntityName
     * @param mixed $aPermissions
-    * @param mixed $bBypassCheck
+    * @param boolean $bBypassCheck
     */
     public static function setPermissions($iUserID, $iEntityID, $sEntityName, $aPermissions, $bBypassCheck=false)
     {
@@ -344,7 +342,7 @@ class Permission extends LSActiveRecord
                 }
                 $aBasePermissions=$aFilteredPermissions;
             }
-            elseif (Permission::model()->hasGlobalPermission('superadmin','read') && Yii::app()->session['loginID']!=1)
+            elseif (!Permission::model()->hasGlobalPermission('superadmin','create'))
             {
                 unset($aBasePermissions['superadmin']);
             }
@@ -357,12 +355,12 @@ class Permission extends LSActiveRecord
         $aFilteredPermissions=array();
         foreach ($aBasePermissions as $sPermissionname=>$aPermission)
         {
-            $aFilteredPermissions[$sPermissionname]['create']= (isset($aPermissions[$sPermissionname]['create']) && $aPermissions[$sPermissionname]['create']);
-            $aFilteredPermissions[$sPermissionname]['read']  = (isset($aPermissions[$sPermissionname]['read']) && $aPermissions[$sPermissionname]['read']);
-            $aFilteredPermissions[$sPermissionname]['update']= (isset($aPermissions[$sPermissionname]['update']) && $aPermissions[$sPermissionname]['update']);
-            $aFilteredPermissions[$sPermissionname]['delete']= (isset($aPermissions[$sPermissionname]['delete']) && $aPermissions[$sPermissionname]['delete']);
-            $aFilteredPermissions[$sPermissionname]['import']= (isset($aPermissions[$sPermissionname]['import']) && $aPermissions[$sPermissionname]['import']);
-            $aFilteredPermissions[$sPermissionname]['export']= (isset($aPermissions[$sPermissionname]['export']) && $aPermissions[$sPermissionname]['export']);
+            $aFilteredPermissions[$sPermissionname]['create']= ($aPermission['create'] && isset($aPermissions[$sPermissionname]['create']) && $aPermissions[$sPermissionname]['create']);
+            $aFilteredPermissions[$sPermissionname]['read']  = ($aPermission['read'] && isset($aPermissions[$sPermissionname]['read']) && $aPermissions[$sPermissionname]['read']);
+            $aFilteredPermissions[$sPermissionname]['update']= ($aPermission['update'] && isset($aPermissions[$sPermissionname]['update']) && $aPermissions[$sPermissionname]['update']);
+            $aFilteredPermissions[$sPermissionname]['delete']= ($aPermission['delete'] && isset($aPermissions[$sPermissionname]['delete']) && $aPermissions[$sPermissionname]['delete']);
+            $aFilteredPermissions[$sPermissionname]['import']= ($aPermission['import'] && isset($aPermissions[$sPermissionname]['import']) && $aPermissions[$sPermissionname]['import']);
+            $aFilteredPermissions[$sPermissionname]['export']= ($aPermission['export'] && isset($aPermissions[$sPermissionname]['export']) && $aPermissions[$sPermissionname]['export']);
         }
 
         $condition = array('entity_id' => $iEntityID, 'uid' => $iUserID);
@@ -372,13 +370,9 @@ class Permission extends LSActiveRecord
         $oEvent->set('iUserID',$iUserID);
         $result = App()->getPluginManager()->dispatchEvent($oEvent);
 
-        // Only the original superadmin may change the superadmin permissions
-        if (Yii::app()->session['loginID']!=1)
-        {
+        if (!Permission::model()->hasGlobalPermission('superadmin','create')) {
             Permission::model()->deleteAllByAttributes($condition,"permission <> 'superadmin' AND entity <> 'template'");
-        }
-        else
-        {
+        } else {
             Permission::model()->deleteAllByAttributes($condition,"entity <> 'template'");
         }
 
@@ -412,8 +406,8 @@ class Permission extends LSActiveRecord
      * Set global permissions to the user id
      *
      * @param int $iNewUID
-     * @param string $sAuthType
-     * @param array $aPermissions
+     * @param string[] $aPermissions
+     * @param string $sPermType
      */
     public function setGlobalPermission($iNewUID,$sPermType,array $aPermissions=array('read_p'))
     {
@@ -438,8 +432,16 @@ class Permission extends LSActiveRecord
         $this->insertSomeRecords($aPerm);
     }
 
+    /**
+     * @param integer $iSurveyID
+     */
     public function giveAllSurveyPermissions($iUserID, $iSurveyID)
     {
+        if ($iSurveyID == 0)
+        {
+            throw new InvalidArgumentException('Survey ID cannot be 0 (collides with superadmin permission entity id)');
+        }
+
         $aPermissions=$this->getSurveyBasePermissions();
         $aPermissionsToSet=array();
         foreach ($aPermissions as $sPermissionName=>$aPermissionDetails)
@@ -503,7 +505,7 @@ class Permission extends LSActiveRecord
     * Checks if a user has a certain permission
     *
     * @param $iEntityID integer The entity ID
-    * @param $sEntityName string The entity name
+    * @param string $sEntityName string The entity name
     * @param $sPermission string Name of the permission
     * @param $sCRUD string The permission detail you want to check on: 'create','read','update','delete','import' or 'export'
     * @param $iUserID integer User ID - if not given the one of the current user is used
@@ -511,11 +513,16 @@ class Permission extends LSActiveRecord
     */
     public function hasPermission($iEntityID, $sEntityName, $sPermission, $sCRUD='read', $iUserID=null)
     {
+        // TODO: in entry script, if CConsoleApplication, set user as superadmin
         if(is_null($iUserID) && Yii::app() instanceof CConsoleApplication)
             return true;
         static $aPermissionStatic;
 
         /* Allow plugin to set own permission */
+        // TODO: plugin should not be able to override the permission system (security issue),
+        //      they should read permissions via the model
+        //      and they should add row in permission table  (entity = plugin, etc)
+
         $oEvent=new PluginEvent('beforeHasPermission');
         $oEvent->set('iEntityID',$iEntityID);
         $oEvent->set('sEntityName',$sEntityName);
@@ -525,61 +532,67 @@ class Permission extends LSActiveRecord
         App()->getPluginManager()->dispatchEvent($oEvent);
         $pluginbPermission=$oEvent->get('bPermission');
 
-        if (isset($pluginbPermission))
-        {
-             return $pluginbPermission;
+        if (isset($pluginbPermission)) {
+            return $pluginbPermission;
         }
 
         /* Always return true for CConsoleApplication (before or after plugin ? All other seems better after plugin) */
-        if(is_null($iUserID) && Yii::app() instanceof CConsoleApplication)
-        {
+        // TODO: see above about entry script and superadmin
+        if(is_null($iUserID) && Yii::app() instanceof CConsoleApplication) {
             return true;
         }
 
         /* Always return false for unknow sCRUD */
-        if (!in_array($sCRUD,array('create','read','update','delete','import','export')))
-        {
+        // TODO: should not be necessary
+        if (!in_array($sCRUD,array('create','read','update','delete','import','export'))) {
             return false;
         }
         $sCRUD=$sCRUD.'_p';
 
         /* Always return false for guests */
-        if(!$this->getUserId($iUserID))
-        {
+        // TODO: should not be necessary
+        if(!$this->getUserId($iUserID)) {
             return false;
-        }
-        else
-        {
+        } else {
             $iUserID=$this->getUserId($iUserID);
         }
 
         /* Always return true if you are the owner : this can be done in core plugin ? */
-        if ($iUserID==$this->getOwnerId($iEntityID, $sEntityName))
-        {
+        // TODO: give the rights to owner adding line in permissions table, so it will return true with the normal way
+        if ($iUserID==$this->getOwnerId($iEntityID, $sEntityName)) {
             return true;
         }
 
         /* Check if superadmin and static it */
-        if (!isset($aPermissionStatic[0]['global'][$iUserID]['superadmin']['read_p']))
-        {
+        if (!isset($aPermissionStatic[0]['global'][$iUserID]['superadmin']['read_p'])) {
             $aPermission = $this->findByAttributes(array("entity_id"=>0,'entity'=>'global', "uid"=> $iUserID, "permission"=>'superadmin'));
             $bPermission = is_null($aPermission) ? array() : $aPermission->attributes;
-            if (!isset($bPermission['read_p']) || $bPermission['read_p']==0)
-            {
-                $bPermission=false;
-            }
-            else
-            {
-                $bPermission=true;
-            }
-            $aPermissionStatic[0]['global'][$iUserID]['superadmin']['read_p']= $bPermission;
+            $aPermissionStatic[0]['global'][$iUserID]['superadmin']= array_merge(
+                array(
+                    'create_p'=>false,
+                    'read_p'=>false,
+                    'update_p'=>false,
+                    'delete_p'=>false,
+                    'import_p'=>false,
+                    'export_p'=>false,
+                ),
+                $bPermission
+            );
         }
-        if ($aPermissionStatic[0]['global'][$iUserID]['superadmin']['read_p'])
-        {
+        /* If it's a superadmin Permission : get and return */
+        if($sPermission == 'superadmin') {
+            return self::isForcedSuperAdmin($iUserID) || $aPermissionStatic[0]['global'][$iUserID][$sPermission][$sCRUD];
+        }
+        if ( self::isForcedSuperAdmin($iUserID) || $aPermissionStatic[0]['global'][$iUserID]['superadmin']['read_p']) {
             return true;
         }
 
         /* Check in permission DB and static it */
+        // TODO: that should be the only way to get the permission,
+        // and it should be accessible from any object with relations :
+        // $obj->permissions->read or $obj->permissions->write, etc.
+        // relation :
+        // 'permissions' => array(self::HAS_ONE, 'Permission', array(), 'condition'=> 'entity_id='.{ENTITYID}.' && uid='.Yii::app()->user->id.' && entity="{ENTITY}" && permission="{PERMISSIONS}"', 'together' => true ),
         if (!isset($aPermissionStatic[$iEntityID][$sEntityName][$iUserID][$sPermission][$sCRUD]))
         {
             $query = $this->findByAttributes(array("entity_id"=> $iEntityID, "uid"=> $iUserID, "entity"=>$sEntityName, "permission"=>$sPermission));
@@ -598,8 +611,17 @@ class Permission extends LSActiveRecord
     }
 
     /**
+     * Returns true if user is a forced superadmin (can not disable superadmin rights)
+     * @var int
+     * @return boolean
+     */
+    public static function isForcedSuperAdmin($iUserID)
+    {
+        return in_array($iUserID,App()->getConfig('forcedsuperadmin'));
+    }
+    /**
     * Returns true if a user has global permission for a certain action.
-    * @param $sPermission string Name of the permission - see function getGlobalPermissions
+    * @param string $sPermission string Name of the permission - see function getGlobalPermissions
     * @param $sCRUD string The permission detailsyou want to check on: 'create','read','update','delete','import' or 'export'
     * @param $iUserID integer User ID - if not given the one of the current user is used
     * @return bool True if user has the permission
@@ -622,8 +644,14 @@ class Permission extends LSActiveRecord
     {
         $oSurvey=Survey::Model()->findByPk($iSurveyID);
         if (!$oSurvey)
+        {
             return false;
-
+        }
+        // If the user has the permission to update all other surveys he may import/export as well
+        if ($this->hasGlobalPermission('surveys', 'update', $iUserID) && $sPermission=='token' && ($sCRUD=='import' || $sCRUD=='export'))
+        {
+           $sCRUD='update';
+        }
         // Get global correspondance for surveys rigth
         $sGlobalCRUD=($sCRUD=='create' || ($sCRUD=='delete' && $sPermission!='survey') ) ? 'update' : $sCRUD;
         return $this->hasGlobalPermission('surveys', $sGlobalCRUD, $iUserID) || $this->hasPermission($iSurveyID, 'survey', $sPermission, $sCRUD, $iUserID);
@@ -645,7 +673,7 @@ class Permission extends LSActiveRecord
     * function used to order Permission by language string
     * @param aApermission array The first permission information
     * @param aBpermission array The second permission information
-    * @return bool
+    * @return integer
     */
     private static function comparePermissionTitle($aApermission,$aBpermission)
     {
@@ -673,7 +701,7 @@ class Permission extends LSActiveRecord
     /**
     * get the owner if of an entity if exist
     * @param iEntityID the entity id
-    * @param sEntityName entity name (model)
+    * @param sEntityName string name (model)
     * @return integer|null user id if exist
     */
     protected function getOwnerId($iEntityID, $sEntityName)

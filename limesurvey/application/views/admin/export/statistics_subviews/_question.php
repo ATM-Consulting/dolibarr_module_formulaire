@@ -16,7 +16,7 @@
 
     <?php echo "<!-- Question type :  $flt[2] -->"; ?>
     <div class="col-sm-4 question-filter-container">
-        <?php if ($flt[2]=='M' || $flt[2]=='|' || $flt[2]=='P' || $flt[2]=='N' || $flt[2]=='L' || $flt[2]=='5' || $flt[2]=='G' || $flt[2]=='I' || $flt[2]=='O' || $flt[2]=='Y' || $flt[2]=='!'): ?>
+        <?php if ($flt[2]=='M' || $flt[2]=='|' || $flt[2]=='P' || $flt[2]=='L' || $flt[2]=='5' || $flt[2]=='G' || $flt[2]=='I' || $flt[2]=='O' || $flt[2]=='Y' || $flt[2]=='!'): ?>
             <!--  TYPE =='M' || 'P' || 'N' || 'L' || '5' || 'G' || 'I' || 'O' || 'Y' || '!' -->
             <input type='checkbox'
                 id='filter<?php echo $myfield; ?>'
@@ -169,15 +169,29 @@
 
 
             case "N": // Numerical
-
                 //textfields for greater and less than X
+                ?>
+                <input type='checkbox'
+                    id='filter<?php echo $myfield; ?>'
+                    name='summary[]'
+                    value='N<?php echo $myfield; ?>' <?php
+                    if (isset($summary) && (array_search("{$surveyid}X{$flt[1]}X{$flt[0]}", $summary) !== FALSE
+                    || array_search("M{$surveyid}X{$flt[1]}X{$flt[0]}", $summary) !== FALSE
+                    || array_search("P{$surveyid}X{$flt[1]}X{$flt[0]}", $summary) !== FALSE
+                    || array_search("N{$surveyid}X{$flt[1]}X{$flt[0]}", $summary) !== FALSE))
+                    { echo " checked='checked'"; }
+                    ?>
+                    />
+                <label for='filter<?php echo $myfield; ?>'>&nbsp;<?php echo $flt[3].' - '.$oStatisticsHelper::_showSpeaker(flattenText($flt[5],true)); ?>
+                </label>
+                <?php
                 $myfield2="{$myfield}G";
                 $myfield3="{$myfield}L";
                 echo "\t<span class='smalltext'>".gT("Number greater than").":</span><br />\n"
-                .CHtml::textField($myfield2,isset($_POST[$myfield2])?$_POST[$myfield2]:'',array( 'onkeypress'=>"return goodchars(event,'0123456789.,')" ))
+                .CHtml::textField('N'.$myfield2,isset($_POST[$myfield2])?'N'.$_POST[$myfield2]:'',array( 'onkeypress'=>"return goodchars(event,'0123456789.,')" ))
                 ."\t<br />\n"
                 ."\t<span class='smalltext'>".gT("Number less than").":</span><br />\n"
-                .CHtml::textField($myfield3,isset($_POST[$myfield3])?$_POST[$myfield3]:'',array( 'onkeypress'=>"return goodchars(event,'0123456789.,')" ))
+                .CHtml::textField('N'.$myfield3,isset($_POST[$myfield3])?'N'.$_POST[$myfield3]:'',array( 'onkeypress'=>"return goodchars(event,'0123456789.,')" ))
                 ."\t<br />\n";
 
                 //put field names into array
@@ -646,10 +660,10 @@
                 case "R": //RANKING
 
                 //get some answers
-
-                //get number of answers
-                $count = count($result[$key1]);
-
+                //get number of columns
+                $answersCount = count($result[$key1]);
+                $maxDbAnswer=QuestionAttribute::model()->find("qid = :qid AND attribute = 'max_subquestions'",array(':qid' => $flt[0]));
+                $columnsCount=(!$maxDbAnswer || intval($maxDbAnswer->value)<1) ? $answersCount : intval($maxDbAnswer->value); // If max_subquestions is not set or is invalid : get the answer count
                 //lets put the answer code and text into the answers array
                 foreach($result[$key1] as $row)
                 {
@@ -657,7 +671,7 @@
                 }
 
                 //loop through all answers. if there are 3 items to rate there will be 3 statistics
-                for ($i=1; $i<=$count; $i++)
+                for ($i=1; $i<=$columnsCount; $i++)
                 {
                     //adjust layout depending on counter
                     //if ($counter2 == 4) {echo "\t</tr>\n\t<tr>\n"; $counter2=0;}

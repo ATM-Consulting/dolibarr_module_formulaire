@@ -13,15 +13,13 @@
         <p class="lead danger">
             <?php eT("Error"); ?>
         </p>
-
         <!-- error message -->
         <p>
-            <?php echo $sErrorMessage; ?>
+        <?php echo $sErrorMessage; ?>
         </p>
-
         <!-- buttons -->
         <p>
-            <input type='submit' class="btn btn-default btn-large" value='<?php eT("Main Admin Screen"); ?>' onclick="window.open('<?php echo $this->createUrl('admin'); ?>', '_top')" />
+            <input type='submit' class="btn btn-default btn-large" value='<?php eT("Main Admin Screen"); ?>' onclick="window.open('<?php echo $this->createUrl('admin/'); ?>', '_top')" />
         </p>
     </div>
 
@@ -32,7 +30,6 @@
         <h2 class="text-success"> <?php eT("Success"); ?></h2>
         <p class="lead"><?php eT("File upload succeeded.");?> </p>
             <h2 class="warning"><?php eT("Error");?></h2>
-
             <!-- errors -->
             <?php
             if(is_array($aImportResults['error']))
@@ -95,6 +92,9 @@
                 <tr><td><?php eT("Quotas");?>:</td><td><?php echo $aImportResults['quota'];?></td></tr>
                 <tr><td><?php eT("Quota members:");?></td><td><?php echo $aImportResults['quotamembers'];?></td></tr>
                 <tr><td><?php eT("Quota language settings:");?></td><td><?php echo $aImportResults['quotals'];?></td></tr>
+                <?php if(!empty($aImportResults['plugin_settings'])) { ?>
+                    <tr><td><?php eT("Plugin settings:");?></td><td><?php echo $aImportResults['plugin_settings'];?></td></tr>
+                <?php } ?>
             </table>
             </div>
             </div>

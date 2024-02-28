@@ -25,9 +25,8 @@ class limereplacementfields extends Survey_Common_Action
         {
             throw new CHttpException(401);
         }
-        list($replacementFields, $isInstertAnswerEnabled) = $this->_getReplacementFields($fieldtype, $surveyid);
-
-        if ($isInstertAnswerEnabled === true)
+        list($replacementFields, $isInsertAnswerEnabled) = $this->_getReplacementFields($fieldtype, $surveyid);
+        if ($isInsertAnswerEnabled === true)
         {
             //2: Get all other questions that occur before this question that are pre-determined answer types
             $fieldmap = createFieldMap($surveyid,'full',false,false,getBaseLanguageFromSurveyID($surveyid));
@@ -42,6 +41,7 @@ class limereplacementfields extends Survey_Common_Action
         }
 
         $data['countfields'] = count($replacementFields);
+        asort($replacementFields);
         $data['replFields'] = $replacementFields;
         if (isset($childQuestions)) {
             $data['cquestions'] = $childQuestions;
@@ -53,6 +53,10 @@ class limereplacementfields extends Survey_Common_Action
         $this->getController()->render('/admin/limeReplacementFields_view', $data);
     }
 
+    /**
+     * @param integer $gid
+     * @param integer $qid
+     */
     private function _getQuestionList($action, $gid, $qid, array $fieldmap, $questionType, $surveyformat)
     {
         $previousQuestion = null;
@@ -79,6 +83,10 @@ class limereplacementfields extends Survey_Common_Action
         return $questionList;
     }
 
+    /**
+     * @param integer $gid
+     * @param integer $qid
+     */
     private function _shouldAddQuestion($action, $gid, $qid, array $question, $previousQuestion)
     {
         switch ($action)
@@ -100,7 +108,7 @@ class limereplacementfields extends Survey_Common_Action
 
             case 'addquestion':
                 if (empty($gid)) {
-                    safeDie("No GID provided.");
+                    safeDie("No GID provided. Please save the question and try again.");
                 }
 
                 if (!is_null($previousQuestion) && $previousQuestion['gid'] == $gid && $question['gid'] != $gid ) {
@@ -124,7 +132,7 @@ class limereplacementfields extends Survey_Common_Action
                    return false;
                 }
                 return true;
-            case 'emailtemplates':
+            case 'editemailtemplates':
                 // this is the case for email-conf
                 return true;
             default:
@@ -132,6 +140,9 @@ class limereplacementfields extends Survey_Common_Action
         }
     }
 
+    /**
+     * @param integer $gid
+     */
     private function _addQuestionToList($action, $gid, array $field, $questionType, $surveyformat, $isPreviousPageQuestion, &$questionList)
     {
         if ($action == 'tokens' && $questionType == 'email-conf' || $surveyformat == "S") {
@@ -179,6 +190,9 @@ class limereplacementfields extends Survey_Common_Action
         return $cquestions;
     }
 
+    /**
+     * @param integer $surveyid
+     */
     private function _getReplacementFields($fieldtype, $surveyid)
     {
 
@@ -194,98 +208,103 @@ class limereplacementfields extends Survey_Common_Action
             case 'editdescription': // for translation
             case 'editwelcome': // for translation
             case 'editend': // for translation
-                $replFields[] = array('TOKEN:FIRSTNAME', gT("First name from token"));
-                $replFields[] = array('TOKEN:LASTNAME', gT("Last name from token"));
-                $replFields[] = array('TOKEN:EMAIL', gT("Email from the token"));
+                $replFields['TOKEN:FIRSTNAME']= gT("First name from token");
+                $replFields['TOKEN:LASTNAME']= gT("Last name from token");
+                $replFields['TOKEN:EMAIL']= gT("Email from the token");
                 $attributes = getTokenFieldsAndNames($surveyid, true);
                 foreach ($attributes as $attributefield => $attributedescription)
                 {
-                    $replFields[] = array('TOKEN:' . strtoupper($attributefield), sprintf(gT("Token attribute: %s"), $attributedescription['description']));
+                    $replFields['TOKEN:' . strtoupper($attributefield)]= sprintf(gT("Token attribute: %s"), $attributedescription['description']);
                 }
-                $replFields[] = array('EXPIRY', gT("Survey expiration date"));
-                $replFields[] = array('ADMINNAME', gT("Name of the survey administrator"));
-                $replFields[] = array('ADMINEMAIL', gT("Email address of the survey administrator"));
+                $replFields['EXPIRY']= gT("Survey expiration date");
+                $replFields['ADMINNAME']= gT("Name of the survey administrator");
+                $replFields['ADMINEMAIL']= gT("Email address of the survey administrator");
                 return array($replFields, false);
 
             case 'email-admin_notification':
             case 'email-admin_detailed_notification':
-                $replFields[] = array('RELOADURL', gT("Reload URL"));
-                $replFields[] = array('VIEWRESPONSEURL', gT("View response URL"));
-                $replFields[] = array('EDITRESPONSEURL', gT("Edit response URL"));
-                $replFields[] = array('STATISTICSURL', gT("Statistics URL"));
-                $replFields[] = array('TOKEN', gT("Token code for this participant"));
-                $replFields[] = array('TOKEN:FIRSTNAME', gT("First name from token"));
-                $replFields[] = array('TOKEN:LASTNAME', gT("Last name from token"));
-                $replFields[] = array('SURVEYNAME', gT("Name of the survey"));
-                $replFields[] = array('SURVEYDESCRIPTION', gT("Description of the survey"));
+                $replFields['RELOADURL']= gT("Reload URL");
+                $replFields['VIEWRESPONSEURL']= gT("View response URL");
+                $replFields['EDITRESPONSEURL']= gT("Edit response URL");
+                $replFields['STATISTICSURL']= gT("Statistics URL");
+                $replFields['TOKEN']= gT("Token code for this participant");
+                $replFields['TOKEN:FIRSTNAME']= gT("First name from token");
+                $replFields['TOKEN:LASTNAME']= gT("Last name from token");
+                $replFields['SURVEYNAME']= gT("Survey title");
+                $replFields['SID']= gT("Survey ID");
+                $replFields['SURVEYDESCRIPTION']= gT("Survey description");
                 $attributes = getTokenFieldsAndNames($surveyid, true);
-                foreach ($attributes as $attributefield => $attributedescription)
-                {
-                    $replFields[] = array(strtoupper($attributefield), sprintf(gT("Token attribute: %s"), $attributedescription['description']));
+                foreach ($attributes as $attributefield => $attributedescription) {
+                    $replFields[strtoupper($attributefield)] = sprintf(gT("Token attribute: %s"), $attributedescription['description']);
                 }
-                $replFields[] = array('ADMINNAME', gT("Name of the survey administrator"));
-                $replFields[] = array('ADMINEMAIL', gT("Email address of the survey administrator"));
+                $replFields['ADMINNAME']= gT("Name of the survey administrator");
+                $replFields['ADMINEMAIL']= gT("Email address of the survey administrator");
                 return array($replFields, false);
 
             case 'email-admin-resp':
-                $replFields[] = array('RELOADURL', gT("Reload URL"));
-                $replFields[] = array('VIEWRESPONSEURL', gT("View response URL"));
-                $replFields[] = array('EDITRESPONSEURL', gT("Edit response URL"));
-                $replFields[] = array('STATISTICSURL', gT("Statistics URL"));
-                $replFields[] = array('ANSWERTABLE', gT("Answers from this response"));
-                $replFields[] = array('TOKEN', gT("Token code for this participant"));
-                $replFields[] = array('TOKEN:FIRSTNAME', gT("First name from token"));
-                $replFields[] = array('TOKEN:LASTNAME', gT("Last name from token"));
-                $replFields[] = array('SURVEYNAME', gT("Name of the survey"));
-                $replFields[] = array('SURVEYDESCRIPTION', gT("Description of the survey"));
+                $replFields['RELOADURL']= gT("Reload URL");
+                $replFields['VIEWRESPONSEURL']= gT("View response URL");
+                $replFields['EDITRESPONSEURL']= gT("Edit response URL");
+                $replFields['STATISTICSURL']= gT("Statistics URL");
+                $replFields['ANSWERTABLE']= gT("Answers from this response");
+                $replFields['TOKEN']= gT("Token code for this participant");
+                $replFields['TOKEN:FIRSTNAME']= gT("First name from token");
+                $replFields['TOKEN:LASTNAME']= gT("Last name from token");
+                $replFields['SURVEYNAME']= gT("Survey title");
+                $replFields['SID']= gT("Survey ID");
+                $replFields['SURVEYDESCRIPTION']= gT("Survey description");
                 $attributes = getTokenFieldsAndNames($surveyid, true);
                 foreach ($attributes as $attributefield => $attributedescription)
                 {
-                    $replFields[] = array(strtoupper($attributefield), sprintf(gT("Token attribute: %s"), $attributedescription['description']));
+                    $replFields[strtoupper($attributefield)] = sprintf(gT("Token attribute: %s"), $attributedescription['description']);
                 }
-                $replFields[] = array('ADMINNAME', gT("Name of the survey administrator"));
-                $replFields[] = array('ADMINEMAIL', gT("Email address of the survey administrator"));
+                $replFields['ADMINNAME']= gT("Name of the survey administrator");
+                $replFields['ADMINEMAIL']= gT("Email address of the survey administrator");
                 return array($replFields, false);
 
             case 'email-invitation':
             case 'email-reminder':
                 // these 2 fields are supported by email-inv and email-rem
                 // but not email-reg for the moment
-                $replFields[] = array('EMAIL', gT("Email from the token"));
-                $replFields[] = array('TOKEN', gT("Token code for this participant"));
-                $replFields[] = array('OPTOUTURL', gT("URL for a respondent to opt-out of this survey"));
-                $replFields[] = array('OPTINURL', gT("URL for a respondent to opt-in to this survey"));
+                $replFields['EMAIL']= gT("Email from the token");
+                $replFields['TOKEN']= gT("Token code for this participant");
+                $replFields['OPTOUTURL']= gT("URL for a respondent to opt-out of this survey");
+                $replFields['OPTINURL']= gT("URL for a respondent to opt-in to this survey");
+                // $replFields['SID']= gT("Survey ID");
             case 'email-registration':
-                $replFields[] = array('FIRSTNAME', gT("First name from token"));
-                $replFields[] = array('LASTNAME', gT("Last name from token"));
-                $replFields[] = array('SURVEYNAME', gT("Name of the survey"));
-                $replFields[] = array('SURVEYDESCRIPTION', gT("Description of the survey"));
+                $replFields['FIRSTNAME']= gT("First name from token");
+                $replFields['LASTNAME']= gT("Last name from token");
+                $replFields['SURVEYNAME']= gT("Survey title");
+                $replFields['SID']= gT("Survey ID");
+                $replFields['SURVEYDESCRIPTION']= gT("Survey description");
                 $attributes = getTokenFieldsAndNames($surveyid, true);
                 foreach ($attributes as $attributefield => $attributedescription)
                 {
-                    $replFields[] = array(strtoupper($attributefield), sprintf(gT("Token attribute: %s"), $attributedescription['description']));
+                    $replFields[strtoupper($attributefield)] = sprintf(gT("Token attribute: %s"), $attributedescription['description']);
                 }
-                $replFields[] = array('ADMINNAME', gT("Name of the survey administrator"));
-                $replFields[] = array('ADMINEMAIL', gT("Email address of the survey administrator"));
-                $replFields[] = array('SURVEYURL', gT("URL of the survey"));
-                $replFields[] = array('EXPIRY', gT("Survey expiration date"));
+                $replFields['ADMINNAME']= gT("Name of the survey administrator");
+                $replFields['ADMINEMAIL']= gT("Email address of the survey administrator");
+                $replFields['SURVEYURL']= gT("URL of the survey");
+                $replFields['EXPIRY']= gT("Survey expiration date");
                 return array($replFields, false);
 
             case 'email-confirmation':
-                $replFields[] = array('TOKEN', gT("Token code for this participant"));
-                $replFields[] = array('FIRSTNAME', gT("First name from token"));
-                $replFields[] = array('LASTNAME', gT("Last name from token"));
-                $replFields[] = array('SURVEYNAME', gT("Name of the survey"));
-                $replFields[] = array('SURVEYDESCRIPTION', gT("Description of the survey"));
+                $replFields['TOKEN']= gT("Token code for this participant");
+                $replFields['FIRSTNAME']= gT("First name from token");
+                $replFields['LASTNAME']= gT("Last name from token");
+                $replFields['EMAIL']= gT("Email from token");
+                $replFields['SURVEYNAME']= gT("Survey title");
+                $replFields['SID']= gT("Survey ID");
+                $replFields['SURVEYDESCRIPTION']= gT("Survey description");
                 $attributes = getTokenFieldsAndNames($surveyid, true);
                 foreach ($attributes as $attributefield => $attributedescription)
                 {
-                    $replFields[] = array(strtoupper($attributefield), sprintf(gT("Token attribute: %s"), $attributedescription['description']));
+                    $replFields[strtoupper($attributefield)]= sprintf(gT("Token attribute: %s"), $attributedescription['description']);
                 }
-                $replFields[] = array('ADMINNAME', gT("Name of the survey administrator"));
-                $replFields[] = array('ADMINEMAIL', gT("Email address of the survey administrator"));
-                $replFields[] = array('SURVEYURL', gT("URL of the survey"));
-                $replFields[] = array('EXPIRY', gT("Survey expiration date"));
+                $replFields['ADMINNAME']= gT("Name of the survey administrator");
+                $replFields['ADMINEMAIL']= gT("Email address of the survey administrator");
+                $replFields['SURVEYURL']= gT("URL of the survey");
+                $replFields['EXPIRY']= gT("Survey expiration date");
 
                 // email-conf can accept insertans fields for non anonymous surveys
                 if (isset($surveyid)) {
@@ -303,25 +322,25 @@ class limereplacementfields extends Survey_Common_Action
             case 'editgroup_desc': // for translation
             case 'editquestion': // for translation
             case 'editquestion_help': // for translation
-                $replFields[] = array('TOKEN:FIRSTNAME', gT("First name from token"));
-                $replFields[] = array('TOKEN:LASTNAME', gT("Last name from token"));
-                $replFields[] = array('TOKEN:EMAIL', gT("Email from the token"));
-                $replFields[] = array('SID', gT("This question's survey ID number"));
-                $replFields[] = array('GID', gT("This question's group ID number"));
-                $replFields[] = array('QID', gT("This question's question ID number"));
-                $replFields[] = array('SGQ', gT("This question's SGQA code"));
+                $replFields['TOKEN:FIRSTNAME']= gT("First name from token");
+                $replFields['TOKEN:LASTNAME']= gT("Last name from token");
+                $replFields['TOKEN:EMAIL']= gT("Email from the token");
+                $replFields['SID']= gT("This question's survey ID number");
+                $replFields['GID']= gT("This question's group ID number");
+                $replFields['QID']= gT("This question's question ID number");
+                $replFields['SGQ']= gT("This question's SGQA code");
                 $attributes = getTokenFieldsAndNames($surveyid, true);
                 foreach ($attributes as $attributefield => $attributedescription)
                 {
-                    $replFields[] = array('TOKEN:' . strtoupper($attributefield), sprintf(gT("Token attribute: %s"), $attributedescription['description']));
+                    $replFields['TOKEN:' . strtoupper($attributefield)]= sprintf(gT("Token attribute: %s"), $attributedescription['description']);
                 }
-                $replFields[] = array('EXPIRY', gT("Survey expiration date"));
+                $replFields['EXPIRY']= gT("Survey expiration date");
             case 'editanswer':
                 return array($replFields, true);
 
             case 'assessment-text':
-                $replFields[] = array('TOTAL', gT("Overall assessment score"));
-                $replFields[] = array('PERC', gT("Assessment group score"));
+                $replFields['TOTAL']= gT("Overall assessment score");
+                $replFields['PERC']= gT("Assessment group score");
                 return array($replFields, false);
         }
     }

@@ -4,12 +4,10 @@
  */
 ?>
 <script type="text/javascript">
-    var sMsgMaximumExcelColumns = '<?php eT("You can only choose 255 colums at a maximum for Excel export.",'js'); ?>';
-    var sMsgExcelColumnsReduced = '<?php eT("The number of selected columns was reduced automatically.",'js'); ?>';
     var sMsgColumnCount = '<?php eT("%s of %s columns selected",'js'); ?>';
 </script>
 
-<div class="side-body">
+<div class='side-body <?php echo getSideBodyClass(false); ?>'>
     <h3>
         <?php eT("Export results");?>
         <?php
@@ -28,35 +26,34 @@
                     <div class="col-sm-12 col-md-6">
 
                         <!-- Format -->
-                        <div class="panel panel-primary" id="pannel-1">
+                        <div class="panel panel-primary" id="panel-1">
                             <div class="panel-heading">
                                 <h4 class="panel-title">
                                     <?php eT("Format");?>
                                 </h4>
                             </div>
                             <div class="panel-body">
-                                <div class="btn-group" data-toggle="buttons">
-                                    <?php $hasTips = false; ?>
-                                    <?php foreach ($exports as $key => $info): ?>
-                                        <?php if (!empty($info['label'])): ?>
-                                            <label class="btn btn-default <?php if($info['label']=='CSV'){ echo 'active';}?>">
-                                                <input
-                                                    name="type"
-                                                    value="<?php echo $key;?>"
-                                                    type="radio"
-                                                    <?php if($info['label']=='CSV'){ echo 'checked';}?>
-                                                    id="<?php echo $key;?>"
-                                                >
-                                                <?php echo $info['label'];?>
-                                                </label>
-                                        <?php endif; ?>
-                                    <?php endforeach; ?>
+                                <div class="form-group">
+                                    <!-- Format -->
+                                    <label for='export_from' class="col-sm-2 control-label">
+                                        <?php eT("Export format:"); ?>
+                                    </label>
+                                    <div class="col-sm-4">
+                                        <?php foreach ($exports as $key => $info): ?>
+                                            <?php if (!empty($info['label'])): ?>
+                                                <div class="radio">
+                                                    <label><input type="radio" name="type" id="<?php echo $key;?>" value="<?php echo $key;?>" <?php if($info['label']=='CSV'){ echo 'checked';}?>><?php echo $info['label'];?></label>
+                                                </div>
+                                                <?php endif; ?>
+                                            <?php endforeach; ?>
+                                                </div>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
 
+                        <?php if (empty(Yii::app()->session['responsesid'])): // If called from massive action, it will be filled the selected answers ?>
                         <!-- Range -->
-                        <div class="panel panel-primary" id="pannel-2" <?php  if ($SingleResponse) { echo 'style="display:none"';} ?> >
+                        <div class="panel panel-primary" id="panel-2" <?php  if ($SingleResponse) { echo 'style="display:none"';} ?> >
                             <div class="panel-heading">
                                 <h4 class="panel-title">
                                     <?php eT("Range");?>
@@ -66,16 +63,16 @@
                                 <div class="form-group">
 
                                     <!-- From -->
-                                    <label for='export_from' class="col-sm-1 control-label">
+                                    <label for='export_from' class="col-sm-2 control-label">
                                         <?php eT("From:"); ?>
                                     </label>
                                     <div class="col-sm-2">
                                         <input
-                                            min="1"
+                                            min="<?php echo $min_datasets; ?>"
                                             max="<?php echo $max_datasets; ?>"
                                             step="1"
                                             type="number"
-                                            value="1"
+                                            value="<?php echo $min_datasets; ?>"
                                             name="export_from"
                                             id="export_from"
                                             class="form-control"
@@ -88,7 +85,7 @@
                                     </label>
                                     <div class="col-sm-2">
                                         <input
-                                            min="1"
+                                            min="<?php echo $min_datasets; ?>"
                                             max="<?php echo $max_datasets; ?>"
                                             step="1"
                                             type="number"
@@ -101,9 +98,48 @@
                                 </div>
                             </div>
                         </div>
+                        <?php else: ?>
+
+                        <div class="panel panel-primary" id="panel-2" <?php  if ($SingleResponse) { echo 'style="display:none"';} ?> >
+                            <div class="panel-heading">
+                                <h4 class="panel-title">
+                                    <?php eT("Selection");?>
+                                </h4>
+                            </div>
+                            <div class="panel-body">
+                                <div class="form-group">
+                                    <?php
+                                        $sResponsesId = '';
+                                        $aResponsesId = json_decode(Yii::app()->session['responsesid']);
+                                        foreach($aResponsesId as $aResponseId){
+                                            $sResponsesId .= $aResponseId.', ';
+                                        }
+                                    ?>
+                                    <!-- From -->
+                                    <label for='export_ids' class="col-sm-2 control-label">
+                                        <?php eT("Selected answers"); ?>
+                                    </label>
+
+                                    <div class="col-sm-6">
+                                        <input type="text" readonly value="<?php echo  $sResponsesId; ?>" class="form-control" name="responses_id" id="responses_id" />
+                                    </div>
+                                    <div class="col-sm-2">
+                                        <a class="btn btn-default" href="<?php echo Yii::app()->getController()->createUrl("admin/responses/sa/setSession/", array('unset'=>'true', 'sid'=>$surveyid)); ?>" role="button"><?php eT("Reset");?></a>
+                                    </div>
+                                    <input
+                                        type="hidden"
+                                        value='<?php echo json_encode($aResponsesId); ?>'
+                                        name="export_ids"
+                                        id="export_ids"
+                                        />
+
+                                </div>
+                            </div>
+                        </div>
+                    <?php endif;?>
 
                         <!-- General -->
-                        <div class="panel panel-primary" id="pannel-3">
+                        <div class="panel panel-primary" id="panel-3">
                             <div class="panel-heading">
                                 <h4 class="panel-title">
                                     <?php eT("General"); ?>
@@ -134,7 +170,7 @@
                         </div>
 
                         <!-- Heading -->
-                        <div class="panel panel-primary" id="pannel-4">
+                        <div class="panel panel-primary" id="panel-4">
                             <div class="panel-heading">
                                 <h4 class="panel-title">
                                     <?php eT("Headings");?>
@@ -244,7 +280,7 @@
                         </div>
 
 
-                        <div class="panel panel-primary" id="pannel-5">
+                        <div class="panel panel-primary" id="panel-5">
                             <div class="panel-heading">
                                 <h4 class="panel-title">
                                     <?php eT("Responses");?>
@@ -294,10 +330,10 @@
                     <div class="col-sm-12 col-md-6">
 
                         <!-- Column control -->
-                        <div class="panel panel-primary" id="pannel-6">
+                        <div class="panel panel-primary" id="panel-6">
                             <div class="panel-heading">
                                 <h4 class="panel-title">
-                                    <?php eT("Column control");?>
+                                    <?php eT("Columns");?>
                                 </h4>
                             </div>
                             <div class="panel-body">
@@ -305,12 +341,8 @@
                                 <?php if ($SingleResponse): ?>
                                     <input type='hidden' name='response_id' value="<?php echo $SingleResponse;?>" />
                                 <?php endif; ?>
-                                <div class="alert alert-warning alert-dismissible" role="alert">
-                                    <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span>&times;</span></button>
-                                    <?php eT('Please note: The export to Excel is currently limited to loading no more than 255 columns.'); ?>
-                                </div>
                                 <label for='colselect' class="col-sm-3 control-label">
-                                    <?php eT("Choose columns:");?>
+                                    <?php eT("Select columns:");?>
                                 </label>
                                 <div class="col-sm-9">
                                 <?php
@@ -326,7 +358,7 @@
 
                         <!-- Token control -->
                         <?php if ($thissurvey['anonymized'] == "N" && tableExists("{{tokens_$surveyid}}") && Permission::model()->hasSurveyPermission($surveyid,'tokens','read')): ?>
-                            <div class="panel panel-primary" id="pannel-7">
+                            <div class="panel panel-primary" id="panel-7">
                                 <div class="panel-heading">
                                     <h4 class="panel-title">
                                         <?php eT("Token control");?>

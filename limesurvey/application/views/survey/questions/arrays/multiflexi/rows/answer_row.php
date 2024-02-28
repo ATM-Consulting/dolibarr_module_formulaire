@@ -2,7 +2,7 @@
 /**
  * Generate a row for the table
  *
- * @var $answer_tds      : the cells of each row, generated with the view rows/cells/*.php 
+ * @var $answer_tds      : the cells of each row, generated with the view rows/cells/*.php
  * @var $sDisplayStyle
  * @var $useAnswerWidth
  * @var $answerwidth
@@ -25,7 +25,7 @@
 
 
         <?php if($error): ?>
-            <div class="alert alert-danger" role="alert">
+            <div class="label label-danger" role="alert">
                 <?php echo $answertext; ?>
             </div>
         <?php else: ?>

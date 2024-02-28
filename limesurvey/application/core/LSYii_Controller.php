@@ -74,7 +74,7 @@ abstract class LSYii_Controller extends CController
      * Loads a library
      *
      * @access public
-     * @param string $helper
+     * @param string $library
      * @return void
      */
     public function loadLibrary($library)
@@ -99,7 +99,10 @@ abstract class LSYii_Controller extends CController
             throw new CException($dieoutput);
 
            if (ini_get("max_execution_time") < 1200) @set_time_limit(1200); // Maximum execution time - works only if safe_mode is off
-        if ((int)substr(ini_get("memory_limit"),0,-1) < (int) Yii::app()->getConfig('memory_limit')) @ini_set("memory_limit",Yii::app()->getConfig('memory_limit').'M'); // Set Memory Limit for big surveys
+        if (ini_get('memory_limit')!=-1 && convertPHPSizeToBytes(ini_get("memory_limit"))<convertPHPSizeToBytes(Yii::app()->getConfig('memory_limit').'M'))
+        {
+            @ini_set("memory_limit",Yii::app()->getConfig('memory_limit').'M'); // Set Memory Limit for big surveys
+        }
 
         // The following function (when called) includes FireBug Lite if true
         defined('FIREBUG') or define('FIREBUG' , Yii::app()->getConfig('use_firebug_lite'));
@@ -136,9 +139,8 @@ abstract class LSYii_Controller extends CController
         {
             Yii::app()->setConfig("timeadjust",$timeadjust.' hours');
         }
-
-        //Yii::app()->setConfig('adminimageurl', Yii::app()->getConfig('styleurl').Yii::app()->getConfig('admintheme').'/images/');
-        //Yii::app()->setConfig('adminstyleurl', Yii::app()->getConfig('styleurl').Yii::app()->getConfig('admintheme').'/');
+        /* Set the default language, other controller can update if wanted */
+        Yii::app()->setLanguage(Yii::app()->getConfig("defaultlang"));
     }
 
     /**
@@ -166,5 +168,14 @@ abstract class LSYii_Controller extends CController
         }
         else
             return parent::createAbsoluteUrl($route,$params,$schema,$ampersand);
+    }
+
+    /**
+     * Loads page states from a hidden input.
+     * @return array the loaded page states
+     */
+    protected function loadPageStates()
+    {
+        return array();
     }
 }

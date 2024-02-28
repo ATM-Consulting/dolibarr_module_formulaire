@@ -1,23 +1,4 @@
 <script language="javascript">
-    $(document).ready(function ()
-        {
-            LoadSelected() ;
-            mydialog.SetOkButton( true ) ;
-            SelectField( 'cquestions' ) ;
-    });
-
-    var eSelected = dialog.Selection.GetSelectedElement() ;
-
-    function LoadSelected()
-    {
-        if ( !eSelected )
-            return ;
-        if ( eSelected.tagName == 'SPAN' && eSelected._fckLimeReplacementFields )
-            document.getElementById('cquestions').value = eSelected._fckLimeReplacementFields ;
-        else
-            eSelected == null ;
-    }
-
     function Ok()
     {
         var sValue = document.getElementById('cquestions').value ;
@@ -26,15 +7,13 @@
         return true ;
     }
 </script>
-</head>
-<body scroll="no" style="OVERFLOW: hidden;">
 <div class="form-group">
     <?php
     if (count($replFields) > 0 || isset($cquestions) )
     {
         $InsertansUnsupportedtypes= Yii::app()->getConfig('InsertansUnsupportedtypes');
         ?>
-        <select name='cquestions' id='cquestions' size='14' ondblclick="$('.cke_dialog_ui_button_ok').children().click();" class='form-control'>
+        <select name='cquestions' id='cquestions' size='14' style='width:390px' ondblclick="$('.cke_dialog_ui_button_ok').children().click();" class='form-control'>
             <?php
             $noselection = false;
         }
@@ -47,13 +26,12 @@
         if (count($replFields) > 0)
         {
             ?>
-            <optgroup label='<?php eT("Standard Fields");?>'>
+            <optgroup label='<?php eT("Standard fields");?>'>
                 <?php
-
-                foreach ($replFields as $stdfield)
+                foreach ($replFields as $stdfield=>$stdfieldvalue)
                 {
                     ?>
-                    <option value='<?php echo $stdfield[0];?>' title='<?php echo $stdfield[1];?>'><?php echo $stdfield[1];?></option>
+                    <option value='<?php echo $stdfield;?>' title='<?php echo $stdfieldvalue;?>'><?php echo $stdfieldvalue;?></option>
                     <?php
                 }
                 ?>
@@ -106,11 +84,11 @@
                     <div class="panel-body">
 
                         <br />
-                        <font color='orange'><?php eT("Some Question have been disabled");?></font>
+                        <font color='orange'><?php eT("Some questions have been disabled");?></font>
                         <br />
-                        <?php echo sprintf(gT("Survey Format is %s:"), gT("All in one"));?>
+                        <?php echo sprintf(gT("Survey display mode is set to %s:"), gT("All in one"));?>
                         <br />
-                        <i><?php eT("Only Previous pages answers are available");?></i>
+                        <i><?php eT("Only previous pages answers are available");?></i>
                         <br />
                     </div>
                     <?php
@@ -119,9 +97,9 @@
                     ?>
                     <div>
                         <br />
-                        <font color='orange'><?php eT("Some Question have been disabled");?></font>
-                        <br /><?php echo sprintf(gT("Survey mode is set to %s:"), gT("Group by Group"));?>
-                        <br/><i><?php eT("Only Previous pages answers are available");?>
+                        <font color='orange'><?php eT("Some questions have been disabled");?></font>
+                        <br /><?php echo sprintf(gT("Survey display mode is set to %s:"), gT("Group by Group"));?>
+                        <br/><i><?php eT("Only previous pages answers are available");?>
                         </i><br />
                     </div>
                     <?php

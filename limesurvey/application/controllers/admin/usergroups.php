@@ -52,9 +52,8 @@ class Usergroups extends Survey_Common_Action
 
                 foreach ($eguresult as $egurow)
                 {
-                    $to[] = $egurow->users->users_name . ' <' . $egurow->users->email . '>';
+                    $to[] = \CHtml::encode($egurow->users->users_name) . ' <' . $egurow->users->email . '>';
                 }
-
                 $from_user_result = User::model()->findByPk(Yii::app()->session['loginID']);
                 $from_user_row = $from_user_result;
 
@@ -77,10 +76,8 @@ class Usergroups extends Survey_Common_Action
                 $body = str_replace("\n.", "\n..", $body);
                 $body = wordwrap($body, 70);
 
-
-                //echo $body . '-'.$subject .'-'.'<pre>'.htmlspecialchars($to).'</pre>'.'-'.$from;
                 if (SendEmailMessage($body, $subject, $to, $from, '')) {
-                    list($aViewUrls, $aData) = $this->index($ugid, array("type" => "success", "message" => "Message(s) sent successfully!"));
+                    list($aViewUrls, $aData) = $this->index($ugid, array("type" => "success", "message" => gT("Message(s) sent successfully!")));
                 }
                 else
                 {
@@ -113,7 +110,7 @@ class Usergroups extends Survey_Common_Action
             $aViewUrls = 'mailUserGroup_view';
         }
 
-        $aData['usergroupbar']['closebutton']['url'] = Yii::app()->request->getUrlReferrer();  // Close button, UrlReferrer
+        $aData['usergroupbar']['closebutton']['url'] = Yii::app()->request->getUrlReferrer(App()->createUrl('admin/usergroups/sa/index'));  // Close button, UrlReferrer
 
         $this->_renderWrappedTemplate('usergroup', $aViewUrls, $aData);
     }
@@ -202,7 +199,7 @@ class Usergroups extends Survey_Common_Action
         }
         $aData['usergroupbar']['savebutton']['form']= 'usergroupform';
         $aData['usergroupbar']['savebutton']['text']= gT('Save');
-        $aData['usergroupbar']['closebutton']['url'] = Yii::app()->request->getUrlReferrer();  // Close button, urlReferrer
+        $aData['usergroupbar']['closebutton']['url'] = Yii::app()->request->getUrlReferrer(App()->createUrl('admin/usergroups/sa/index'));  // Close button, urlReferrer
         $aData['usergroupbar']['add'] = 'admin/usergroups';
         $this->_renderWrappedTemplate('usergroup', $aViewUrls, $aData);
     }
@@ -219,7 +216,8 @@ class Usergroups extends Survey_Common_Action
 
         $action = (isset($_POST['action'])) ? $_POST['action'] : '';
         if (Permission::model()->hasGlobalPermission('usergroups','update')) {
-            if ($action == "editusergroupindb") {
+            if ($action == "editusergroupindb")
+             {
 
                 $ugid = (int)$_POST['ugid'];
 
@@ -246,7 +244,7 @@ class Usergroups extends Survey_Common_Action
             }
         }
 
-        $aData['usergroupbar']['closebutton']['url'] = Yii::app()->request->getUrlReferrer();  // Close button, urlReferrer
+        $aData['usergroupbar']['closebutton']['url'] = Yii::app()->request->getUrlReferrer(App()->createUrl('admin/usergroups/sa/index'));  // Close button, urlReferrer
         $aData['usergroupbar']['savebutton']['form']= 'usergroupform';
         $aData['usergroupbar']['savebutton']['text']= gT("Update user group");
 
@@ -262,6 +260,11 @@ class Usergroups extends Survey_Common_Action
     */
     public function index($ugid = false, $header = false)
     {
+        if(!Permission::model()->hasGlobalPermission('usergroups','read'))
+        {
+            Yii::app()->session['flashmessage'] =gT('Access denied!');
+            $this->getController()->redirect(App()->createUrl("/admin"));
+        }
         if ($ugid != false)
             $ugid = (int)$ugid;
 
@@ -345,7 +348,7 @@ class Usergroups extends Survey_Common_Action
         if ($ugid == false)
         {
             $aData['usergroupbar']['returnbutton']['url']='admin/index';
-            $aData['usergroupbar']['returnbutton']['text']=gT('Return to admin panel');
+            $aData['usergroupbar']['returnbutton']['text']=gT('Return to admin home');
         }
         else
         {
@@ -444,8 +447,7 @@ class Usergroups extends Survey_Common_Action
     protected function _renderWrappedTemplate($sAction = 'usergroup', $aViewUrls = array(), $aData = array())
     {
         App()->getClientScript()->registerPackage('jquery-tablesorter');
-        App()->getClientScript()->registerScriptFile( App()->getAssetManager()->publish( ADMIN_SCRIPT_PATH.'users.js' ));
-
+        $this->registerScriptFile( 'ADMIN_SCRIPT_PATH', 'users.js');
         $aData['display']['menu_bars']['user_group'] = true;
 
         parent::_renderWrappedTemplate($sAction, $aViewUrls, $aData);

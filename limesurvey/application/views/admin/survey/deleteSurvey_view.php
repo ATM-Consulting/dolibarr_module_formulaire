@@ -1,4 +1,4 @@
-<div class="side-body">
+<div class='side-body <?php echo getSideBodyClass(false); ?>'>
     <div class="row">
         <div class="col-lg-12 content-right">
         <br/>
@@ -26,7 +26,7 @@
                     <?php echo CHtml::beginForm($this->createUrl("admin/survey/sa/delete/surveyid/{$surveyid}"), 'post');?>
                         <input type='hidden' name='delete' value='yes'>
                         <input type='submit'  class="btn btn-lg btn-warning" value='<?php eT("Delete survey"); ?>'>
-                        <input type='button'  class="btn btn-lg btn-default" value='<?php eT("Cancel"); ?>' onclick="window.open('<?php echo Yii::app()->request->getUrlReferrer( Yii::app()->createUrl("admin/survey/sa/view/surveyid/$surveyid") , array() ); ?>', '_top')" />
+                        <input type='button'  class="btn btn-lg btn-default" value='<?php eT("Cancel"); ?>' onclick="window.open('<?php echo Yii::app()->request->getUrlReferrer( Yii::app()->createUrl("admin/survey/sa/view/surveyid/$surveyid") ); ?>', '_top')" />
                     <?php echo CHtml::endForm(); ?>
                 </p>
         </div>
